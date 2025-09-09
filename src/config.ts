@@ -8,21 +8,21 @@ import type {
 import { LinkPreset } from "./types/config";
 
 export const siteConfig: SiteConfig = {
-	title: "Arasu",
-	subtitle: "Blog",
-	lang: "en", // Language code, e.g. 'en', 'zh_CN', 'ja', etc.
+	title: 'Arasu',
+	subtitle: 'Blog',
+	lang: 'en', // Language code, e.g. 'en', 'zh_CN', 'ja', etc.
 	themeColor: {
 		hue: 250, // Default hue for the theme color, from 0 to 360. e.g. red: 0, teal: 200, cyan: 250, pink: 345
 		fixed: false, // Hide the theme color picker for visitors
 	},
 	banner: {
-		enable: false,
-		src: "assets/images/demo-banner.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
-		position: "center", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
+		enable: true,
+		src: 'assets/images/anime-moon-landscape.jpg', // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+		position: 'center', // Equivalent to object-position, only supports 'top', 'center', 'bottom'. 'center' by default
 		credit: {
-			enable: false, // Display the credit text of the banner image
-			text: "", // Credit text to be displayed
-			url: "", // (Optional) URL link to the original artwork or artist's page
+			enable: true, // Display the credit text of the banner image
+			text: '', // Credit text to be displayed
+			url: 'https://www.freepik.com/free-ai-image/anime-moon-landscape_234131917.htm#fromView=keyword&page=1&position=29&uuid=ea18cbe0-413a-4066-bef6-272720f7e953&query=Desktop+wallpaper+anime', // (Optional) URL link to the original artwork or artist's page
 		},
 	},
 	toc: {
@@ -37,7 +37,7 @@ export const siteConfig: SiteConfig = {
 		//   sizes: '32x32',              // (Optional) Size of the favicon, set only if you have favicons of different sizes
 		// }
 	],
-};
+}
 
 export const navBarConfig: NavBarConfig = {
 	links: [
@@ -53,7 +53,7 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/demo-avatar.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
+	avatar: "assets/images/avatar-2.png", // Relative to the /src directory. Relative to the /public directory if it starts with '/'
 	name: "Arasu",
 	bio: "I am a Security Guard",
 	links: [
