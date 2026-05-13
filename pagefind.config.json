@@ -1,0 +1,25 @@
+{
+  "exclude": [
+    "**/*.css",
+    "**/*.js",
+    "**/*.svg",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.gif",
+    "**/node_modules/**",
+    "**/attachments/**"
+  ],
+  "include": [
+    "**/*.html"
+  ],
+  "force_language": "zh",
+  "indexes": {
+    "pages": {
+      "meta": [
+        "title",
+        "description"
+      ]
+    }
+  },
+  "bundle_dir": "pagefind"
+}

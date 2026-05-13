@@ -1,64 +1,191 @@
-# Astro Starter Kit: Blog
+# Zen Theme Blog
 
-```sh
-npm create astro@latest -- --template blog
+A clean, modern blog theme with excellent readability and beautiful typography. Built with Astro for optimal performance.
+
+## Features
+
+- 🎨 **Zen Theme**: Clean design with excellent readability
+- 🔤 **Inter Font**: Optimal readability with Inter typeface
+- 🎯 **Responsive Design**: Fully responsive for mobile and desktop
+- 🌙 **Dark Mode**: Automatic theme switching based on user preference
+- 🔍 **Search**: Built-in search functionality with Pagefind
+- 📝 **Markdown Support**: Full markdown and MDX support
+- 📊 **Beautiful Tables**: Styled tables with hover effects
+- 📱 **Sidebar TOC**: Fixed table of contents for easy navigation
+
+## Tech Stack
+
+- **Astro** - Static site generator
+- **Tailwind CSS** - CSS framework
+- **Pagefind** - Search functionality
+- **Inter Font** - Typography
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn package manager
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/your-repo-name.git
+
+# Navigate to the project directory
+cd your-repo-name
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+### Build for Production
 
-Features:
+```bash
+npm run build
+```
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and Open Graph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
+### Preview Production Build
 
-## 🚀 Project Structure
+```bash
+npm run preview
+```
 
-Inside of your Astro project, you'll see the following folders and files:
+## Project Structure
 
-```text
-├── public/
+```
 ├── src/
-│   ├── assets/
-│   ├── components/
-│   ├── content/
-│   ├── layouts/
-│   └── pages/
-├── astro.config.mjs
-├── README.md
-├── package.json
-└── tsconfig.json
+│   ├── components/          # Reusable components
+│   │   ├── Header.astro    # Header component
+│   │   └── SearchModal.astro # Search modal
+│   ├── content/            # Blog content
+│   │   ├── about/          # About page content
+│   │   └── blog/           # Blog posts
+│   ├── layouts/            # Page layouts
+│   │   ├── BlogPost.astro   # Blog post layout
+│   │   └── BaseLayout.astro # Base layout
+│   ├── pages/              # Page routes
+│   │   ├── blog/           # Blog listing
+│   │   ├── tags/           # Tag pages
+│   │   ├── about.astro     # About page
+│   │   └── index.astro     # Home page
+│   ├── styles/             # Global styles
+│   │   └── global.css      # Global CSS variables
+│   └── consts.ts           # Site constants
+├── astro.config.mjs        # Astro configuration
+├── package.json            # Project dependencies
+└── README.md               # This file
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Configuration
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+### Site Metadata
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+Edit `src/consts.ts` to configure your site:
 
-Any static assets, like images, can be placed in the `public/` directory.
+```typescript
+export const SITE_TITLE = 'Zen Theme Blog';
+export const SITE_DESCRIPTION = 'A clean, modern blog theme with excellent readability.';
+export const AUTHOR_NAME = 'Your Name';
+export const AUTHOR_TITLE = 'Your Title';
+export const AUTHOR_DESCRIPTION = 'Your description';
 
-## 🧞 Commands
+export const SOCIAL_LINKS = {
+  github: 'https://github.com/yourusername',
+  twitter: 'https://twitter.com/yourusername',
+  linkedin: 'https://linkedin.com/in/yourusername',
+  email: 'mailto:your@email.com',
+};
+```
 
-All commands are run from the root of the project, from a terminal:
+### Theme Variables
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+Edit `src/styles/global.css` to customize the theme:
 
-## 👀 Want to learn more?
+```css
+:root {
+  --accent: #F97316;          /* Primary color */
+  --text-primary: #18181B;    /* Primary text */
+  --text-secondary: #3F3F46;  /* Secondary text */
+  --bg-primary: #FFFFFF;      /* Background */
+  --border-color: #E4E4E7;    /* Border color */
+}
+```
 
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+### Adding Blog Posts
 
-## Credit
+Create new markdown files in `src/content/blog/`:
 
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
-# astro-X
+```markdown
+---
+title: Post Title
+description: Post description
+pubDate: 2026-05-13
+tags: ["tag1", "tag2"]
+---
+
+Your content here...
+```
+
+## Customization
+
+### Changing Colors
+
+Modify the CSS variables in `src/styles/global.css`:
+
+- `--accent`: Primary accent color (default: orange)
+- `--text-primary`: Main text color
+- `--bg-primary`: Background color
+- `--border-color`: Border color
+
+### Changing Fonts
+
+The theme uses Inter font by default. You can change the font in `src/styles/global.css`:
+
+```css
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+```
+
+## Features Overview
+
+### Typography
+- Inter font family for optimal readability
+- Line height: 1.9 for comfortable reading
+- Letter spacing: -0.01em for better text density
+
+### Color Scheme
+
+**Light Mode:**
+- Primary: #F97316 (Warm Orange)
+- Background: #FFFFFF
+- Text: #18181B, #3F3F46, #71717A
+
+**Dark Mode:**
+- Primary: #FB923C (Lighter Orange)
+- Background: #18181B
+- Text: #FAFAFA, #D4D4D8, #71717A
+
+### Layout
+- Content Width: 700px for optimal reading line length
+- Responsive Design: Works on all screen sizes
+- Sidebar TOC: Fixed table of contents for long articles
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is open source and available for personal use.
+
+## Acknowledgments
+
+- Built with [Astro](https://astro.build/)
+- Search powered by [Pagefind](https://pagefind.app/)
+- Font by [Inter](https://fonts.google.com/specimen/Inter)
