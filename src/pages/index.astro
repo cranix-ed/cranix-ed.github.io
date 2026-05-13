@@ -12,10 +12,10 @@ const allPosts = (await getCollection('blog')).sort(
 const recentPosts = allPosts.slice(0, 4);
 
 const formatDate = (date: Date) => {
-	const year = date.getFullYear();
-	const month = date.getMonth() + 1;
+	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	const month = months[date.getMonth()];
 	const day = date.getDate();
-	return `${year}.${month.toString().padStart(2, '0')}.${day.toString().padStart(2, '0')}`;
+	return `${month} ${day}`;
 };
 ---
 
@@ -175,7 +175,7 @@ const formatDate = (date: Date) => {
 			}
 
 			.post-item {
-				padding: 1rem 0;
+				padding: 0.5rem 0;
 				border-bottom: 1px solid rgba(229, 231, 235, 0.5);
 				transition: background-color 0.15s ease;
 			}
@@ -197,11 +197,13 @@ const formatDate = (date: Date) => {
 			}
 
 			.post-date {
-				font-size: 0.75rem;
+				font-size: 0.8rem;
 				color: var(--text-muted);
-				min-width: 90px;
+				min-width: 70px;
 				flex-shrink: 0;
 				text-align: left;
+				font-weight: 500;
+				letter-spacing: 0.02em;
 			}
 
 			.post-title {

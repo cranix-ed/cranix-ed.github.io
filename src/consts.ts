@@ -8,7 +8,7 @@ export const AUTHOR_TITLE = 'Full Stack Developer / Technical Writer';
 export const AUTHOR_DESCRIPTION = 'Passionate about technology, focusing on Web development and security research. Sharing technical insights, study notes, and project experiences here.';
 
 export const SOCIAL_LINKS = {
-  github: 'https://github.com/yourusername',
+  github: 'https://github.com/Secd0g/zen',
   twitter: 'https://twitter.com/yourusername',
   linkedin: 'https://linkedin.com/in/yourusername',
   email: 'mailto:your@email.com',

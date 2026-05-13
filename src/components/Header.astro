@@ -2,6 +2,8 @@
 import { SITE_TITLE } from '../consts';
 import HeaderLink from './HeaderLink.astro';
 import SearchModal from './SearchModal.astro';
+
+const isDark = 'dark';
 ---
 
 <header>
@@ -19,108 +21,117 @@ import SearchModal from './SearchModal.astro';
 		
 		<div class="nav-right">
 			<SearchModal />
-			<button id="theme-toggle" class="nav-btn" title="Toggle theme" aria-label="Toggle theme">
+			<button id="theme-toggle" class="nav-btn" title="切换主题" aria-label="切换主题">
 				<svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<script>document.write(document.documentElement.classList.contains('dark') ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>' : '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>')</script>
+					<circle cx="12" cy="12" r="5"/>
+					<line x1="12" y1="1" x2="12" y2="3"/>
+					<line x1="12" y1="21" x2="12" y2="23"/>
+					<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+					<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+					<line x1="1" y1="12" x2="3" y2="12"/>
+					<line x1="21" y1="12" x2="23" y2="12"/>
+					<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+					<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
 				</svg>
 			</button>
 		</div>
 	</nav>
 </header>
-
-<script is:inline>
-	(function() {
-		const STORAGE_KEY = 'astro-theme';
-		const themeToggle = document.getElementById('theme-toggle');
-		const themeIcon = document.getElementById('theme-icon');
-		
-		const DARK_ICON = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
-		const LIGHT_ICON = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
-
-		function getSystemTheme() {
-			if (typeof window !== 'undefined' && window.matchMedia) {
-				return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-			}
-			return 'light';
+<script>
+	const themeToggle = document.getElementById('theme-toggle');
+	const themeIcon = document.getElementById('theme-icon');
+	
+	const STORAGE_KEY = 'astro-theme';
+	const DARK_ICON = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+	const LIGHT_ICON = `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`;
+	
+	function getPreferredTheme() {
+		if (typeof localStorage !== 'undefined') {
+			const stored = localStorage.getItem(STORAGE_KEY);
+			if (stored) return stored;
 		}
-
-		function getStoredTheme() {
-			if (typeof localStorage !== 'undefined') {
-				return localStorage.getItem(STORAGE_KEY);
-			}
-			return null;
-		}
-
-		function setTheme(theme, saveToStorage = false) {
-			const html = document.documentElement;
-			
-			const preloadStyle = document.getElementById('theme-preload-style');
-			if (preloadStyle) {
-				preloadStyle.remove();
-			}
-			
-			if (theme === 'dark') {
-				html.classList.add('dark');
-				html.setAttribute('data-theme', 'github-dark');
-				if (themeIcon) {
-					themeIcon.innerHTML = DARK_ICON;
-				}
-			} else {
-				html.classList.remove('dark');
-				html.setAttribute('data-theme', 'github-light');
-				if (themeIcon) {
-					themeIcon.innerHTML = LIGHT_ICON;
-				}
-			}
-
-			if (saveToStorage && typeof localStorage !== 'undefined') {
-				localStorage.setItem(STORAGE_KEY, theme);
-			}
-			
-			const event = new Event('themeChange');
-			document.dispatchEvent(event);
-		}
-
-		function toggleTheme() {
-			const isDark = document.documentElement.classList.contains('dark');
-			const newTheme = isDark ? 'light' : 'dark';
-			setTheme(newTheme, true);
-		}
-
-		// Initialize theme
-		function initTheme() {
-			const stored = getStoredTheme();
-			let theme = null;
-			if (stored && stored !== 'auto') {
-				theme = stored;
-			} else {
-				theme = getSystemTheme();
-			}
-			setTheme(theme, false);
-		}
-
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', () => {
-				initTheme();
-				themeToggle?.addEventListener('click', toggleTheme);
-			});
-		} else {
-			initTheme();
-			themeToggle?.addEventListener('click', toggleTheme);
-		}
-
-		// Listen for system theme changes
 		if (typeof window !== 'undefined' && window.matchMedia) {
-			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-				const stored = getStoredTheme();
-				if (!stored || stored === 'auto') {
-					setTheme(e.matches ? 'dark' : 'light');
-				}
-			});
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 		}
-	})();
+		return 'light';
+	}
+	
+	function setTheme(theme) {
+		const html = document.documentElement;
+		const header = document.querySelector('header');
+		const footer = document.querySelector('footer');
+		const navLinks = document.querySelectorAll('.nav-center a');
+		const navBtn = document.querySelectorAll('.nav-btn');
+		const socialLinks = document.querySelectorAll('.social-links a');
+		
+		const preloadStyle = document.getElementById('theme-preload-style');
+		if (preloadStyle) {
+			preloadStyle.remove();
+		}
+		
+		if (theme === 'dark') {
+			html.classList.add('dark');
+			themeIcon.innerHTML = DARK_ICON;
+			html.style.backgroundColor = '#111827';
+			
+			if (header) {
+				header.style.backgroundColor = 'rgba(17, 24, 39, 0.95)';
+				header.style.borderBottomColor = 'rgb(75, 85, 99)';
+			}
+			if (footer) {
+				footer.style.backgroundColor = 'rgb(17, 24, 39)';
+				footer.style.borderTopColor = 'rgb(75, 85, 99)';
+				footer.style.color = '#9ca3af';
+			}
+			document.querySelector('h2 a')?.style.setProperty('color', 'rgb(255, 255, 255)');
+			navLinks.forEach(link => link.style.setProperty('color', '#9ca3af'));
+			navBtn.forEach(btn => btn.style.setProperty('color', '#9ca3af'));
+			socialLinks.forEach(link => link.style.setProperty('color', '#9ca3af'));
+		} else {
+			html.classList.remove('dark');
+			themeIcon.innerHTML = LIGHT_ICON;
+			html.style.backgroundColor = '#ffffff';
+			
+			if (header) {
+				header.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+				header.style.borderBottomColor = 'rgb(243, 244, 246)';
+			}
+			if (footer) {
+				footer.style.backgroundColor = 'rgb(255, 255, 255)';
+				footer.style.borderTopColor = 'rgb(243, 244, 246)';
+				footer.style.color = 'rgb(75, 85, 99)';
+			}
+			document.querySelector('h2 a')?.style.setProperty('color', 'rgb(17, 24, 39)');
+			navLinks.forEach(link => link.style.setProperty('color', 'rgb(75, 85, 99)'));
+			navBtn.forEach(btn => btn.style.setProperty('color', 'rgb(75, 85, 99)'));
+			socialLinks.forEach(link => link.style.setProperty('color', 'rgb(75, 85, 99)'));
+		}
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem(STORAGE_KEY, theme);
+		}
+	}
+	
+	function toggleTheme() {
+		const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+		const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+		setTheme(newTheme);
+		
+		const event = new Event('themeChange');
+		document.dispatchEvent(event);
+	}
+	
+	setTheme(getPreferredTheme());
+	
+	themeToggle?.addEventListener('click', toggleTheme);
+	
+	if (typeof window !== 'undefined' && window.matchMedia) {
+		window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+			if (!localStorage.getItem(STORAGE_KEY)) {
+				setTheme(e.matches ? 'dark' : 'light');
+			}
+		});
+	}
 </script>
-
 <style>
 	header {
 		position: sticky;
@@ -128,22 +139,21 @@ import SearchModal from './SearchModal.astro';
 		z-index: 100;
 		width: 100%;
 		border-bottom: 1px solid var(--border-color);
-		backdrop-filter: blur(20px);
-		-webkit-backdrop-filter: blur(20px);
-		background-color: rgba(255, 255, 255, 0.6);
-		transition: background-color 0.3s ease, border-color 0.3s ease;
+		backdrop-filter: blur(8px);
+		background-color: rgba(255, 255, 255, 0.95);
 	}
 	
 	h2 {
 		margin: 0;
 		font-size: 1.125rem;
-		font-weight: 600;
+		font-weight: 700;
 	}
 
 	h2 a,
 	h2 a.active {
 		text-decoration: none;
-		color: var(--text-primary);
+		color: #000000;
+		font-weight: 700;
 	}
 	
 	nav {
@@ -154,7 +164,6 @@ import SearchModal from './SearchModal.astro';
 		justify-content: space-between;
 		height: 64px;
 		padding: 0 1rem;
-		font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
 	}
 	
 	.nav-left {
@@ -168,7 +177,6 @@ import SearchModal from './SearchModal.astro';
 	
 	.nav-right {
 		display: flex;
-		align-items: center;
 		gap: 0.5rem;
 	}
 	
@@ -181,7 +189,7 @@ import SearchModal from './SearchModal.astro';
 		border: none;
 		background: none;
 		border-radius: 0.5rem;
-		color: var(--text-secondary);
+		color: var(--text-muted);
 		cursor: pointer;
 		transition: all 0.2s ease;
 	}
@@ -195,7 +203,7 @@ import SearchModal from './SearchModal.astro';
 		padding: 0.5rem 0;
 		color: var(--text-secondary);
 		font-size: 0.875rem;
-		font-weight: 700;
+		font-weight: 500;
 		text-decoration: none;
 		border-bottom: 2px solid transparent;
 		transition: all 0.2s ease;
@@ -208,9 +216,5 @@ import SearchModal from './SearchModal.astro';
 	.nav-center a.active {
 		color: var(--accent);
 		border-bottom-color: var(--accent);
-	}
-
-	html.dark header {
-		background-color: rgba(15, 23, 42, 0.7);
 	}
 </style>

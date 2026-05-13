@@ -147,19 +147,32 @@ Tables feature rounded corners, subtle shadows, and hover effects for rows:
 ### Code Blocks
 Syntax-highlighted code blocks with proper spacing and readable fonts:
 
-```javascript
-const zenTheme = {
-  accent: '#F97316',
-  typography: {
-    fontFamily: 'Inter',
-    fontSize: '17px',
+```typescript
+// Example code block with syntax highlighting
+const zenThemeConfig = {
+  primaryColor: '#F97316',
+  fontSettings: {
+    family: 'Inter',
+    size: '17px',
     lineHeight: 1.9
   },
-  layout: {
-    contentWidth: '700px'
-  }
+  contentWidth: '700px'
 };
 ```
+
+### Configuration Reference
+
+Here's how to configure the Zen theme parameters:
+
+| Parameter | Value | File Location |
+|-----------|-------|---------------|
+| Accent Color | `#F97316` | `src/styles/global.css` (CSS variable `--accent`) |
+| Font Family | Inter | `src/styles/global.css` |
+| Font Size | 17px | `src/styles/global.css` (CSS variable `--body-font-size`) |
+| Line Height | 1.9 | `src/styles/global.css` |
+| Content Width | 700px | `src/layouts/BlogPost.astro` |
+| Site Title | Your Blog Name | `src/consts.ts` |
+| Social Links | GitHub, Twitter, etc. | `src/consts.ts` (`SOCIAL_LINKS`) |
 
 ### Callout Boxes
 Tip boxes with icons for important information:
