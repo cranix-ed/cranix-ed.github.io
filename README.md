@@ -31,10 +31,10 @@ A clean, modern blog theme with excellent readability and beautiful typography. 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/your-repo-name.git
+git clone https://github.com/Secd0g/zen
 
 # Navigate to the project directory
-cd your-repo-name
+cd zen
 
 # Install dependencies
 npm install
@@ -95,7 +95,7 @@ export const AUTHOR_TITLE = 'Your Title';
 export const AUTHOR_DESCRIPTION = 'Your description';
 
 export const SOCIAL_LINKS = {
-  github: 'https://github.com/yourusername',
+  github: 'https://github.com/Secd0g/zen',
   twitter: 'https://twitter.com/yourusername',
   linkedin: 'https://linkedin.com/in/yourusername',
   email: 'mailto:your@email.com',
