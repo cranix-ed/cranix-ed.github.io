@@ -19,7 +19,25 @@ const isDark = 'dark';
 		</kbd>
 	</button>
 	<dialog style="padding: 0" aria-label="Search">
-		<div id="starlight__search" />
+		<div class="search-wrapper">
+			<div class="search-box">
+				<svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<circle cx="11" cy="11" r="8"/>
+					<path d="m21 21-4.35-4.35"/>
+				</svg>
+				<input type="text" class="search-input" placeholder="Search..." />
+				<button class="search-clear-btn" style="display: none;">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="18" y1="6" x2="6" y2="18"/>
+						<line x1="6" y1="6" x2="18" y2="18"/>
+					</svg>
+				</button>
+			</div>
+			<div class="search-results-area">
+				<div class="results-count">Type to search...</div>
+				<div class="results-container"></div>
+			</div>
+		</div>
 	</dialog>
 </site-search>
 
@@ -43,9 +61,23 @@ const isDark = 'dark';
 			super();
 			const openBtn = this.querySelector('button[data-open-modal]');
 			const dialog = this.querySelector('dialog');
+			const searchInput = this.querySelector('.search-input');
+			const searchClear = this.querySelector('.search-clear-btn');
+			const resultsCount = this.querySelector('.results-count');
+			const resultsContainer = this.querySelector('.results-container');
+
+			let searchTimeout = null;
+
+			const closeModal = () => {
+				dialog.close();
+				searchInput.value = '';
+				searchClear.style.display = 'none';
+				resultsCount.textContent = 'Type to search...';
+				resultsContainer.innerHTML = '';
+			};
 
 			const onClick = (event) => {
-				const isLink = 'href' in (event.target || {});
+				const isLink = event.target.closest('a');
 				if (isLink || (document.body.contains(event.target) && !dialog.contains(event.target))) {
 					closeModal();
 				}
@@ -54,52 +86,109 @@ const isDark = 'dark';
 			const openModal = (event) => {
 				dialog.showModal();
 				document.body.toggleAttribute('data-search-modal-open', true);
-				this.querySelector('input')?.focus();
+				searchInput.focus();
 				event?.stopPropagation();
 				window.addEventListener('click', onClick);
 			};
 
-			const closeModal = () => {
-				dialog.close();
-				const searchInput = this.querySelector('input');
-				if (searchInput) {
-					searchInput.value = '';
-				}
-			};
-
 			openBtn.addEventListener('click', openModal);
 			openBtn.disabled = false;
+
 			dialog.addEventListener('close', () => {
 				document.body.toggleAttribute('data-search-modal-open', false);
 				window.removeEventListener('click', onClick);
 			});
+
+			searchInput.addEventListener('input', (e) => {
+				const query = e.target.value.trim();
+				searchClear.style.display = query ? 'flex' : 'none';
+				
+				if (searchTimeout) clearTimeout(searchTimeout);
+				
+				if (!query) {
+					resultsCount.textContent = 'Type to search...';
+					resultsContainer.innerHTML = '';
+					return;
+				}
+
+				searchTimeout = setTimeout(async () => {
+					try {
+						const response = await fetch(`/pagefind/search?q=${encodeURIComponent(query)}`);
+						const data = await response.json();
+						displayResults(data, query);
+					} catch (error) {
+						console.warn('Search failed:', error);
+						resultsCount.textContent = 'Search unavailable';
+					}
+				}, 150);
+			});
+
+			searchClear.addEventListener('click', () => {
+				searchInput.value = '';
+				searchClear.style.display = 'none';
+				resultsCount.textContent = 'Type to search...';
+				resultsContainer.innerHTML = '';
+				searchInput.focus();
+			});
+
+			const displayResults = (data, query) => {
+				if (!data.results || data.results.length === 0) {
+					resultsCount.textContent = 'No results found';
+					resultsContainer.innerHTML = '';
+					return;
+				}
+
+				resultsCount.textContent = `${data.results.length} results for "${query}"`;
+				
+				let html = '';
+				data.results.forEach((result) => {
+					const title = highlightText(result.meta.title || result.url, query);
+					
+					html += `
+						<div class="result-card">
+							<a href="${result.url}" class="result-main-link">${title}</a>
+					`;
+					
+					if (result.subresults && result.subresults.length > 0) {
+						result.subresults.forEach((sub) => {
+							const subTitle = highlightText(sub.title, query);
+							const subExcerpt = sub.excerpt ? highlightText(sub.excerpt, query) : '';
+							html += `
+								<div class="result-sub-item">
+									<svg class="sub-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M18 8v6l-3-3M12 19h7l-7-7v7Z"/>
+									</svg>
+									<div class="sub-content">
+										<a href="${result.url}#${sub.id}" class="sub-link">${subTitle}</a>
+										${subExcerpt ? `<p class="sub-excerpt">${subExcerpt}</p>` : ''}
+									</div>
+								</div>
+							`;
+						});
+					}
+					
+					html += '</div>';
+				});
+				
+				resultsContainer.innerHTML = html;
+			};
+
+			const highlightText = (text, query) => {
+				if (!text) return '';
+				const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+				return text.replace(regex, '<mark>$1</mark>');
+			};
 
 			window.addEventListener('keydown', (e) => {
 				if ((e.metaKey === true || e.ctrlKey === true) && e.key === 'k') {
 					dialog.open ? closeModal() : openModal();
 					e.preventDefault();
 				}
+				
+				if (e.key === 'Escape' && dialog.open) {
+					closeModal();
+				}
 			});
-
-			if (!import.meta.env.DEV) {
-				window.addEventListener('DOMContentLoaded', () => {
-					const onIdle = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
-					onIdle(async () => {
-						try {
-							const { PagefindUI } = await import('@pagefind/default-ui');
-							new PagefindUI({
-								element: '#starlight__search',
-								baseUrl: import.meta.env.BASE_URL,
-								bundlePath: import.meta.env.BASE_URL.replace(/\/$/, '') + '/pagefind/',
-								showImages: false,
-								showSubResults: true,
-							});
-						} catch (error) {
-							console.warn('Pagefind UI failed to load:', error);
-						}
-					});
-				});
-			}
 		}
 	}
 
@@ -195,6 +284,164 @@ const isDark = 'dark';
 		backdrop-filter: blur(8px);
 	}
 
+	.search-wrapper {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		width: 100%;
+	}
+
+	.search-box {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1rem;
+		background-color: #ffffff;
+		border-bottom: 1px solid #e2e8f0;
+	}
+
+	.search-icon {
+		flex-shrink: 0;
+		color: #94a3b8;
+	}
+
+	.search-input {
+		flex: 1;
+		font-size: 1rem;
+		color: #1e293b;
+		border: none;
+		outline: none;
+		background: transparent;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
+
+	.search-input::placeholder {
+		color: #94a3b8;
+	}
+
+	.search-clear-btn {
+		flex-shrink: 0;
+		display: none;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		color: #94a3b8;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		border-radius: 4px;
+		transition: color 0.2s, background-color 0.2s;
+	}
+
+	.search-clear-btn:hover {
+		color: #1e293b;
+		background-color: #f1f5f9;
+	}
+
+	.search-results-area {
+		flex: 1;
+		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.results-count {
+		font-size: 0.8125rem;
+		color: #64748b;
+		padding: 0.75rem 1rem;
+		font-weight: 500;
+	}
+
+	.results-container {
+		flex: 1;
+		overflow-y: auto;
+		padding-bottom: 1rem;
+	}
+
+	.result-card {
+		border: 1px solid #e2e8f0;
+		border-radius: 8px;
+		margin: 0 1rem 0.25rem;
+		overflow: hidden;
+		background-color: #ffffff;
+	}
+
+	.result-main-link {
+		display: block;
+		padding: 0.75rem 1rem;
+		font-weight: 600;
+		font-size: 0.9375rem;
+		color: #1e293b;
+		text-decoration: none;
+		background-color: #ffffff;
+		border-bottom: 1px solid #e2e8f0;
+		transition: background-color 0.2s;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
+
+	.result-main-link:hover {
+		background-color: #f8fafc;
+	}
+
+	.result-sub-item {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding: 0.625rem 1rem;
+		border-bottom: 1px solid #f1f5f9;
+		background-color: #fafafa;
+		transition: background-color 0.2s;
+	}
+
+	.result-sub-item:last-child {
+		border-bottom: none;
+	}
+
+	.result-sub-item:hover {
+		background-color: #f1f5f9;
+	}
+
+	.sub-icon {
+		flex-shrink: 0;
+		color: #94a3b8;
+		margin-top: 0.125rem;
+	}
+
+	.sub-content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.sub-link {
+		display: block;
+		font-weight: 500;
+		font-size: 0.875rem;
+		color: #475569;
+		text-decoration: none;
+		transition: color 0.2s;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
+
+	.sub-link:hover {
+		color: #2563eb;
+	}
+
+	.sub-excerpt {
+		margin: 0.25rem 0 0;
+		font-size: 0.8125rem;
+		color: #64748b;
+		line-height: 1.5;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	}
+
+	.result-card mark {
+		background-color: rgba(251, 191, 36, 0.4);
+		color: #92400e;
+		padding: 0 2px;
+		border-radius: 2px;
+	}
+
 	@media (min-width: 50rem) {
 		dialog {
 			margin: 4rem auto auto;
@@ -226,248 +473,82 @@ const isDark = 'dark';
 	html.dark dialog {
 		background-color: var(--bg-primary);
 	}
-</style>
 
-<style is:global>
-	@import url('@pagefind/default-ui/css/ui.css');
-
-	[data-search-modal-open] {
-		overflow: hidden;
+	html.dark .search-wrapper {
+		background-color: var(--bg-primary);
 	}
 
-	#starlight__search {
-		width: 100%;
-		height: 100%;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	}
-
-	#starlight__search * {
-		box-sizing: border-box;
-		margin: 0;
-		padding: 0;
-	}
-
-	#starlight__search .pagefind-ui__form {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 1rem;
-		background-color: #ffffff;
-		border-bottom: 1px solid #e2e8f0;
-	}
-
-	#starlight__search .pagefind-ui__form::before {
-		content: '';
-		width: 18px;
-		height: 18px;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-		background-size: contain;
-		flex-shrink: 0;
-	}
-
-	#starlight__search .pagefind-ui__search-input {
-		flex: 1;
-		font-size: 1rem;
-		color: #1e293b;
-		border: none;
-		outline: none;
-		background: transparent;
-	}
-
-	#starlight__search .pagefind-ui__search-input::placeholder {
-		color: #94a3b8;
-	}
-
-	#starlight__search .pagefind-ui__search-clear {
-		width: 28px;
-		height: 28px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: #94a3b8;
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		border-radius: 4px;
-		transition: all 0.2s;
-		font-size: 0;
-	}
-
-	#starlight__search .pagefind-ui__search-clear:hover {
-		color: #1e293b;
-		background-color: #f1f5f9;
-	}
-
-	#starlight__search .pagefind-ui__search-clear::before {
-		content: '';
-		width: 16px;
-		height: 16px;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E");
-		background-size: contain;
-	}
-
-	#starlight__search .pagefind-ui__results {
-		display: flex;
-		flex-direction: column;
-		height: calc(100% - 60px);
-	}
-
-	#starlight__search .pagefind-ui__results-count {
-		font-size: 0.8125rem;
-		color: #64748b;
-		padding: 0.75rem 1rem;
-		font-weight: 500;
-	}
-
-	#starlight__search .pagefind-ui__result {
-		border: 1px solid #e2e8f0;
-		border-radius: 8px;
-		margin: 0 1rem 0.25rem;
-		overflow: hidden;
-		background-color: #ffffff;
-	}
-
-	#starlight__search .pagefind-ui__result-title {
-		padding: 0.75rem 1rem;
-		background-color: #ffffff;
-		border-bottom: 1px solid #e2e8f0;
-	}
-
-	#starlight__search .pagefind-ui__result-title:hover {
-		background-color: #f8fafc;
-	}
-
-	#starlight__search .pagefind-ui__result-link {
-		font-weight: 600;
-		font-size: 0.9375rem;
-		color: #1e293b;
-		text-decoration: none;
-		display: block;
-	}
-
-	#starlight__search .pagefind-ui__result-link:hover {
-		color: #2563eb;
-	}
-
-	#starlight__search .pagefind-ui__result-excerpt {
-		display: none;
-	}
-
-	#starlight__search .pagefind-ui__result-nested {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.75rem;
-		padding: 0.625rem 1rem;
-		border-bottom: 1px solid #f1f5f9;
-		background-color: #fafafa;
-		position: relative;
-	}
-
-	#starlight__search .pagefind-ui__result-nested::before {
-		content: '';
-		width: 14px;
-		height: 14px;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 8v6l-3-3M12 19h7l-7-7v7Z'/%3E%3C/svg%3E");
-		background-size: contain;
-		flex-shrink: 0;
-		margin-top: 0.125rem;
-	}
-
-	#starlight__search .pagefind-ui__result-nested:hover {
-		background-color: #f1f5f9;
-	}
-
-	#starlight__search .pagefind-ui__result-nested .pagefind-ui__result-link {
-		font-weight: 500;
-		font-size: 0.875rem;
-		color: #475569;
-	}
-
-	#starlight__search .pagefind-ui__result-nested .pagefind-ui__result-excerpt {
-		display: block;
-		font-size: 0.8125rem;
-		color: #64748b;
-		margin-top: 0.25rem;
-		line-height: 1.5;
-	}
-
-	#starlight__search mark {
-		background-color: rgba(251, 191, 36, 0.4);
-		color: #92400e;
-		padding: 0 2px;
-		border-radius: 2px;
-	}
-
-	html.dark #starlight__search .pagefind-ui__form {
+	html.dark .search-box {
 		background-color: var(--bg-secondary);
 		border-bottom-color: var(--border-color);
 	}
 
-	html.dark #starlight__search .pagefind-ui__form::before {
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+	html.dark .search-icon {
+		color: var(--text-muted);
 	}
 
-	html.dark #starlight__search .pagefind-ui__search-input {
+	html.dark .search-input {
 		color: var(--text-primary);
 	}
 
-	html.dark #starlight__search .pagefind-ui__search-input::placeholder {
+	html.dark .search-input::placeholder {
 		color: var(--text-muted);
 	}
 
-	html.dark #starlight__search .pagefind-ui__search-clear {
+	html.dark .search-clear-btn {
 		color: var(--text-muted);
 	}
 
-	html.dark #starlight__search .pagefind-ui__search-clear:hover {
+	html.dark .search-clear-btn:hover {
 		color: var(--text-primary);
 		background-color: var(--bg-tertiary);
 	}
 
-	html.dark #starlight__search .pagefind-ui__result {
+	html.dark .results-count {
+		color: var(--text-muted);
+	}
+
+	html.dark .result-card {
 		border-color: var(--border-color);
 		background-color: var(--bg-secondary);
 	}
 
-	html.dark #starlight__search .pagefind-ui__result-title {
+	html.dark .result-main-link {
+		color: var(--text-primary);
 		background-color: var(--bg-secondary);
 		border-bottom-color: var(--border-color);
 	}
 
-	html.dark #starlight__search .pagefind-ui__result-title:hover {
+	html.dark .result-main-link:hover {
 		background-color: var(--bg-tertiary);
 	}
 
-	html.dark #starlight__search .pagefind-ui__result-link {
-		color: var(--text-primary);
-	}
-
-	html.dark #starlight__search .pagefind-ui__result-link:hover {
-		color: #60a5fa;
-	}
-
-	html.dark #starlight__search .pagefind-ui__result-nested {
+	html.dark .result-sub-item {
 		background-color: var(--bg-tertiary);
 		border-bottom-color: var(--border-color);
 	}
 
-	html.dark #starlight__search .pagefind-ui__result-nested:hover {
+	html.dark .result-sub-item:hover {
 		background-color: rgba(59, 130, 246, 0.1);
 	}
 
-	html.dark #starlight__search .pagefind-ui__result-nested::before {
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 8v6l-3-3M12 19h7l-7-7v7Z'/%3E%3C/svg%3E");
-	}
-
-	html.dark #starlight__search .pagefind-ui__result-nested .pagefind-ui__result-link {
-		color: var(--text-secondary);
-	}
-
-	html.dark #starlight__search .pagefind-ui__result-nested .pagefind-ui__result-excerpt {
+	html.dark .sub-icon {
 		color: var(--text-muted);
 	}
 
-	html.dark #starlight__search mark {
+	html.dark .sub-link {
+		color: var(--text-secondary);
+	}
+
+	html.dark .sub-link:hover {
+		color: #60a5fa;
+	}
+
+	html.dark .sub-excerpt {
+		color: var(--text-muted);
+	}
+
+	html.dark .result-card mark {
 		background-color: rgba(251, 191, 36, 0.3);
 		color: #fbbf24;
 	}
