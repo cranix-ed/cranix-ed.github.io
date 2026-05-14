@@ -79,13 +79,14 @@ const isDark = 'dark';
 </script>
 
 <script>
+	import { PagefindUI } from '@pagefind/default-ui';
+
 	class SiteSearch extends HTMLElement {
 		constructor() {
 			super();
 			const openBtn = this.querySelector('button[data-open-modal]');
 			const closeBtn = this.querySelector('button[data-close-modal]');
 			const dialog = this.querySelector('dialog');
-			const dialogFrame = this.querySelector('.dialog-frame');
 			const input = this.querySelector('.search-input');
 			const clearBtn = this.querySelector('.search-clear');
 			const resultsList = this.querySelector('.results-list');
@@ -97,24 +98,7 @@ const isDark = 'dark';
 			const searchTermElements = this.querySelectorAll('.search-term');
 
 			let searchTimeout = null;
-			let pagefindLoaded = false;
-			let pagefindError = false;
-
-			const loadPagefind = async () => {
-				if (pagefindLoaded || pagefindError) return;
-				try {
-					await new Promise((resolve, reject) => {
-						const script = document.createElement('script');
-						script.src = '/pagefind/pagefind.js';
-						script.onload = resolve;
-						script.onerror = reject;
-						document.head.appendChild(script);
-					});
-					pagefindLoaded = true;
-				} catch {
-					pagefindError = true;
-				}
-			};
+			let pagefindUI = null;
 
 			const closeModal = () => {
 				if (dialog.open) {
@@ -223,13 +207,16 @@ const isDark = 'dark';
 				showLoading();
 
 				try {
-					await loadPagefind();
-					
-					if (pagefindError) {
-						throw new Error('Pagefind not loaded');
+					if (!pagefindUI) {
+						pagefindUI = await PagefindUI.create({
+							baseUrl: '',
+							bundlePath: '/pagefind/',
+							showImages: false,
+							showSubResults: true
+						});
 					}
 
-					const search = await window.Pagefind.search(query);
+					const search = await pagefindUI.search(query);
 					const results = [];
 					
 					for (const result of search.results) {
@@ -255,7 +242,8 @@ const isDark = 'dark';
 					}
 					
 					showResults(results);
-				} catch {
+				} catch (err) {
+					console.error('Search error:', err);
 					showError();
 				}
 			};
@@ -274,7 +262,6 @@ const isDark = 'dark';
 				document.body.toggleAttribute('data-search-modal-open', true);
 				input.focus();
 				event?.stopPropagation();
-				loadPagefind();
 			};
 
 			openBtn.addEventListener('click', openModal);
