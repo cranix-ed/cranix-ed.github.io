@@ -38,8 +38,6 @@ const isDark = 'dark';
 </script>
 
 <script>
-	import '@pagefind/default-ui';
-
 	class SiteSearch extends HTMLElement {
 		constructor() {
 			super();
@@ -48,6 +46,7 @@ const isDark = 'dark';
 			const container = this.querySelector('#search-container');
 			
 			let pagefindUI = null;
+			let isLoading = false;
 
 			const closeModal = () => {
 				if (dialog.open) {
@@ -63,15 +62,45 @@ const isDark = 'dark';
 				}
 			};
 
-			const openModal = (event) => {
+			const loadPagefind = async () => {
+				return new Promise((resolve) => {
+					if (window.PagefindUI) {
+						resolve(window.PagefindUI);
+						return;
+					}
+					if (isLoading) {
+						setTimeout(() => loadPagefind().then(resolve), 100);
+						return;
+					}
+
+					isLoading = true;
+					
+					const script = document.createElement('script');
+					script.src = `${window.location.origin}/pagefind/pagefind-ui.js`;
+					script.onload = () => {
+						isLoading = false;
+						resolve(window.PagefindUI);
+					};
+					script.onerror = () => {
+						isLoading = false;
+						resolve(null);
+					};
+					document.head.appendChild(script);
+				});
+			};
+
+			const openModal = async (event) => {
 				if (!pagefindUI) {
-					pagefindUI = new PagefindUI({
-						element: container,
-						showImages: false,
-						showSubResults: true,
-						highlightParam: 'highlight',
-						placeholder: 'Search...',
-					});
+					const PagefindUI = await loadPagefind();
+					if (PagefindUI) {
+						pagefindUI = new PagefindUI({
+							element: container,
+							showImages: false,
+							showSubResults: true,
+							highlightParam: 'highlight',
+							placeholder: 'Search...',
+						});
+					}
 				}
 				dialog.showModal();
 				document.body.toggleAttribute('data-search-modal-open', true);
@@ -393,7 +422,7 @@ const isDark = 'dark';
 	}
 
 	html.dark .pagefind-ui__result mark {
-		background-color: rgba(251, 191, 36, 0.3);
+		background-color: rgba(251, 191, 36, 0.4);
 		color: #fbbf24;
 	}
 </style>
