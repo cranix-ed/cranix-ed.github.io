@@ -88,7 +88,6 @@ const isDark = 'dark';
 			const searchTerm = this.querySelector('.search-term');
 
 			let searchTimeout = null;
-			let pagefindLoaded = false;
 			let isLoading = false;
 
 			const closeModal = () => {
@@ -139,7 +138,7 @@ const isDark = 'dark';
 			};
 
 			this.renderResult = (result) => {
-				const title = highlightText(result.meta.title || result.url.split('/').pop().replace(/-/g, ' '), input.value);
+				const title = highlightText(result.title || result.url.split('/').pop().replace(/-/g, ' '), input.value);
 				const excerpt = result.excerpt ? highlightText(result.excerpt.substring(0, 150) + '...', input.value) : '';
 				const path = result.url.replace('/blog/', '');
 				
@@ -161,28 +160,33 @@ const isDark = 'dark';
 					return;
 				}
 
-				if (!pagefindLoaded) {
-					showLoading();
-					try {
-						await this.loadPagefind();
-						pagefindLoaded = true;
-					} catch {
-						showError();
-						return;
-					}
-				}
-
 				showLoading();
 				isLoading = true;
 
 				try {
-					const results = await window.pagefind.search(query);
-					const items = [];
-					for (const result of results.results) {
-						const meta = await result.data();
-						items.push({ ...meta, url: result.url });
+					const response = await fetch(`/pagefind/search?q=${encodeURIComponent(query)}`);
+					if (!response.ok) throw new Error('Network error');
+					
+					const data = await response.json();
+					const results = [];
+					
+					for (const result of data.results) {
+						let title = result.meta?.title || '';
+						let excerpt = result.excerpt || '';
+						
+						if (!title) {
+							const urlParts = result.url.split('/');
+							title = urlParts[urlParts.length - 1].replace(/-/g, ' ');
+						}
+						
+						results.push({
+							url: result.url,
+							title,
+							excerpt
+						});
 					}
-					showResults(items);
+					
+					showResults(results);
 				} catch {
 					showError();
 				} finally {
@@ -197,28 +201,6 @@ const isDark = 'dark';
 				searchTimeout = setTimeout(() => {
 					performSearch(input.value);
 				}, 150);
-			};
-
-			this.loadPagefind = async () => {
-				return new Promise((resolve, reject) => {
-					if (window.pagefind) {
-						resolve();
-						return;
-					}
-
-					const script = document.createElement('script');
-					script.src = `${window.location.origin}/pagefind/pagefind.js`;
-					script.onload = async () => {
-						try {
-							await window.pagefind.init();
-							resolve();
-						} catch {
-							reject();
-						};
-					};
-					script.onerror = reject;
-					document.head.appendChild(script);
-				});
 			};
 
 			const openModal = () => {
