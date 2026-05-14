@@ -36,6 +36,10 @@ const isDark = 'dark';
 			<div class="search-results-area">
 				<div class="results-count">Type to search...</div>
 				<div class="results-container"></div>
+				<div class="dev-hint" style="display: none;">
+					<p>Search is available after building the project.</p>
+					<p>Run <code>npm run build</code> to enable search.</p>
+				</div>
 			</div>
 		</div>
 	</dialog>
@@ -65,8 +69,11 @@ const isDark = 'dark';
 			const searchClear = this.querySelector('.search-clear-btn');
 			const resultsCount = this.querySelector('.results-count');
 			const resultsContainer = this.querySelector('.results-container');
-
+			const devHint = this.querySelector('.dev-hint');
+			
 			let searchTimeout = null;
+			let pagefind = null;
+			let isLoading = false;
 
 			const closeModal = () => {
 				dialog.close();
@@ -74,6 +81,7 @@ const isDark = 'dark';
 				searchClear.style.display = 'none';
 				resultsCount.textContent = 'Type to search...';
 				resultsContainer.innerHTML = '';
+				devHint.style.display = 'none';
 			};
 
 			const onClick = (event) => {
@@ -99,7 +107,22 @@ const isDark = 'dark';
 				window.removeEventListener('click', onClick);
 			});
 
-			searchInput.addEventListener('input', (e) => {
+			const loadPagefind = async () => {
+				if (pagefind || isLoading) return;
+				isLoading = true;
+				try {
+					const pagefindModule = await import('pagefind');
+					await pagefindModule.init();
+					pagefind = pagefindModule;
+					isLoading = false;
+					return true;
+				} catch (error) {
+					isLoading = false;
+					return false;
+				}
+			};
+
+			searchInput.addEventListener('input', async (e) => {
 				const query = e.target.value.trim();
 				searchClear.style.display = query ? 'flex' : 'none';
 				
@@ -108,17 +131,28 @@ const isDark = 'dark';
 				if (!query) {
 					resultsCount.textContent = 'Type to search...';
 					resultsContainer.innerHTML = '';
+					devHint.style.display = 'none';
 					return;
 				}
 
 				searchTimeout = setTimeout(async () => {
+					if (!pagefind) {
+						const success = await loadPagefind();
+						if (!success) {
+							resultsCount.textContent = 'Search unavailable';
+							resultsContainer.innerHTML = '';
+							devHint.style.display = 'block';
+							return;
+						}
+					}
+
 					try {
-						const response = await fetch(`/pagefind/search?q=${encodeURIComponent(query)}`);
-						const data = await response.json();
-						displayResults(data, query);
+						const results = await pagefind.search(query);
+						displayResults(results, query);
 					} catch (error) {
-						console.warn('Search failed:', error);
 						resultsCount.textContent = 'Search unavailable';
+						resultsContainer.innerHTML = '';
+						devHint.style.display = 'block';
 					}
 				}, 150);
 			});
@@ -128,21 +162,23 @@ const isDark = 'dark';
 				searchClear.style.display = 'none';
 				resultsCount.textContent = 'Type to search...';
 				resultsContainer.innerHTML = '';
+				devHint.style.display = 'none';
 				searchInput.focus();
 			});
 
-			const displayResults = (data, query) => {
-				if (!data.results || data.results.length === 0) {
-					resultsCount.textContent = 'No results found';
+			const displayResults = (results, query) => {
+				if (!results || results.results.length === 0) {
+					resultsCount.textContent = `No results for "${query}"`;
 					resultsContainer.innerHTML = '';
+					devHint.style.display = 'none';
 					return;
 				}
 
-				resultsCount.textContent = `${data.results.length} results for "${query}"`;
+				resultsCount.textContent = `${results.results.length} results for "${query}"`;
 				
 				let html = '';
-				data.results.forEach((result) => {
-					const title = highlightText(result.meta.title || result.url, query);
+				for (const result of results.results) {
+					const title = highlightText(result.meta.title || result.url.split('/').pop(), query);
 					
 					html += `
 						<div class="result-card">
@@ -150,7 +186,7 @@ const isDark = 'dark';
 					`;
 					
 					if (result.subresults && result.subresults.length > 0) {
-						result.subresults.forEach((sub) => {
+						for (const sub of result.subresults) {
 							const subTitle = highlightText(sub.title, query);
 							const subExcerpt = sub.excerpt ? highlightText(sub.excerpt, query) : '';
 							html += `
@@ -164,13 +200,14 @@ const isDark = 'dark';
 									</div>
 								</div>
 							`;
-						});
+						}
 					}
 					
 					html += '</div>';
-				});
+				}
 				
 				resultsContainer.innerHTML = html;
+				devHint.style.display = 'none';
 			};
 
 			const highlightText = (text, query) => {
@@ -442,6 +479,28 @@ const isDark = 'dark';
 		border-radius: 2px;
 	}
 
+	.dev-hint {
+		padding: 1rem;
+		text-align: center;
+		border-top: 1px solid #e2e8f0;
+		background-color: #fef3c7;
+	}
+
+	.dev-hint p {
+		margin: 0.25rem 0;
+		font-size: 0.875rem;
+		color: #92400e;
+	}
+
+	.dev-hint code {
+		display: inline-block;
+		padding: 0.125rem 0.375rem;
+		background-color: rgba(0, 0, 0, 0.1);
+		border-radius: 4px;
+		font-family: ui-monospace, SFMono-Regular, monospace;
+		font-size: 0.8125rem;
+	}
+
 	@media (min-width: 50rem) {
 		dialog {
 			margin: 4rem auto auto;
@@ -551,5 +610,18 @@ const isDark = 'dark';
 	html.dark .result-card mark {
 		background-color: rgba(251, 191, 36, 0.3);
 		color: #fbbf24;
+	}
+
+	html.dark .dev-hint {
+		background-color: rgba(251, 191, 36, 0.1);
+		border-top-color: var(--border-color);
+	}
+
+	html.dark .dev-hint p {
+		color: #fbbf24;
+	}
+
+	html.dark .dev-hint code {
+		background-color: rgba(0, 0, 0, 0.2);
 	}
 </style>
