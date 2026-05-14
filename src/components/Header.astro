@@ -6,6 +6,25 @@ import SearchModal from './SearchModal.astro';
 const isDark = 'dark';
 ---
 
+<script is:inline>
+	(function() {
+		const STORAGE_KEY = 'astro-theme';
+		let theme = null;
+
+		if (typeof localStorage !== 'undefined') {
+			theme = localStorage.getItem(STORAGE_KEY);
+		}
+
+		if (!theme || theme === 'auto') {
+			if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.classList.add('dark');
+			}
+		} else if (theme === 'dark') {
+			document.documentElement.classList.add('dark');
+		}
+	})();
+</script>
+
 <header>
 	<nav>
 		<div class="nav-left">
@@ -60,9 +79,6 @@ const isDark = 'dark';
 		const html = document.documentElement;
 		const header = document.querySelector('header');
 		const footer = document.querySelector('footer');
-		const navLinks = document.querySelectorAll('.nav-center a');
-		const navBtn = document.querySelectorAll('.nav-btn');
-		const socialLinks = document.querySelectorAll('.social-links a');
 		
 		const preloadStyle = document.getElementById('theme-preload-style');
 		if (preloadStyle) {
@@ -72,43 +88,16 @@ const isDark = 'dark';
 		if (theme === 'dark') {
 			html.classList.add('dark');
 			themeIcon.innerHTML = DARK_ICON;
-			html.style.backgroundColor = '#111827';
-			
-			if (header) {
-				header.style.backgroundColor = 'rgba(17, 24, 39, 0.95)';
-				header.style.borderBottomColor = 'rgb(75, 85, 99)';
-			}
-			if (footer) {
-				footer.style.backgroundColor = 'rgb(17, 24, 39)';
-				footer.style.borderTopColor = 'rgb(75, 85, 99)';
-				footer.style.color = '#9ca3af';
-			}
-			document.querySelector('h2 a')?.style.setProperty('color', 'rgb(255, 255, 255)');
-			navLinks.forEach(link => link.style.setProperty('color', '#9ca3af'));
-			navBtn.forEach(btn => btn.style.setProperty('color', '#9ca3af'));
-			socialLinks.forEach(link => link.style.setProperty('color', '#9ca3af'));
 		} else {
 			html.classList.remove('dark');
 			themeIcon.innerHTML = LIGHT_ICON;
-			html.style.backgroundColor = '#ffffff';
-			
-			if (header) {
-				header.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-				header.style.borderBottomColor = 'rgb(243, 244, 246)';
-			}
-			if (footer) {
-				footer.style.backgroundColor = 'rgb(255, 255, 255)';
-				footer.style.borderTopColor = 'rgb(243, 244, 246)';
-				footer.style.color = 'rgb(75, 85, 99)';
-			}
-			document.querySelector('h2 a')?.style.setProperty('color', 'rgb(17, 24, 39)');
-			navLinks.forEach(link => link.style.setProperty('color', 'rgb(75, 85, 99)'));
-			navBtn.forEach(btn => btn.style.setProperty('color', 'rgb(75, 85, 99)'));
-			socialLinks.forEach(link => link.style.setProperty('color', 'rgb(75, 85, 99)'));
 		}
+		
 		if (typeof localStorage !== 'undefined') {
 			localStorage.setItem(STORAGE_KEY, theme);
 		}
+		
+		document.dispatchEvent(new CustomEvent('ecThemeChange'));
 	}
 	
 	function toggleTheme() {
@@ -143,6 +132,10 @@ const isDark = 'dark';
 		background-color: rgba(255, 255, 255, 0.95);
 	}
 	
+	html.dark header {
+		background-color: rgba(24, 24, 27, 0.95);
+	}
+	
 	h2 {
 		margin: 0;
 		font-size: 1.125rem;
@@ -152,7 +145,7 @@ const isDark = 'dark';
 	h2 a,
 	h2 a.active {
 		text-decoration: none;
-		color: #000000;
+		color: var(--text-primary);
 		font-weight: 700;
 	}
 	

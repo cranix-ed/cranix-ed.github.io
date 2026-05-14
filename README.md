@@ -4,19 +4,21 @@ A clean, modern blog theme with excellent readability and beautiful typography. 
 
 ## Features
 
-- 🎨 **Zen Theme**: Clean design with excellent readability
+- 🎨 **Zen Theme**: Clean design inspired by Zen Browser documentation
 - 🔤 **Inter Font**: Optimal readability with Inter typeface
 - 🎯 **Responsive Design**: Fully responsive for mobile and desktop
 - 🌙 **Dark Mode**: Automatic theme switching based on user preference
 - 🔍 **Search**: Built-in search functionality with Pagefind
-- 📝 **Markdown Support**: Full markdown and MDX support
+- 📝 **Markdown Support**: Full markdown support
 - 📊 **Beautiful Tables**: Styled tables with hover effects
 - 📱 **Sidebar TOC**: Fixed table of contents for easy navigation
+- ⬆️ **Back to Top**: Smooth scroll back to top button
+- 🏷️ **Tag Pages**: Browse posts by tags
+- 📅 **Year Grouping**: Blog posts organized by year
 
 ## Tech Stack
 
 - **Astro** - Static site generator
-- **Tailwind CSS** - CSS framework
 - **Pagefind** - Search functionality
 - **Inter Font** - Typography
 
@@ -60,21 +62,22 @@ npm run preview
 ```
 ├── src/
 │   ├── components/          # Reusable components
-│   │   ├── Header.astro    # Header component
-│   │   └── SearchModal.astro # Search modal
+│   │   ├── BaseHead.astro   # Base head component
+│   │   ├── Code.astro       # Code block component
+│   │   ├── Footer.astro     # Footer component
+│   │   ├── FormattedDate.astro # Date formatting
+│   │   ├── Header.astro     # Header component
+│   │   ├── HeaderLink.astro # Header link component
+│   │   └── SearchModal.astro # Search modal component
 │   ├── content/            # Blog content
-│   │   ├── about/          # About page content
 │   │   └── blog/           # Blog posts
 │   ├── layouts/            # Page layouts
-│   │   ├── BlogPost.astro   # Blog post layout
-│   │   └── BaseLayout.astro # Base layout
+│   │   └── BlogPost.astro   # Blog post layout
 │   ├── pages/              # Page routes
-│   │   ├── blog/           # Blog listing
-│   │   ├── tags/           # Tag pages
+│   │   ├── blog/           # Blog listing (index.astro)
+│   │   ├── tags/           # Tag pages (index.astro, [tag].astro)
 │   │   ├── about.astro     # About page
 │   │   └── index.astro     # Home page
-│   ├── styles/             # Global styles
-│   │   └── global.css      # Global CSS variables
 │   └── consts.ts           # Site constants
 ├── astro.config.mjs        # Astro configuration
 ├── package.json            # Project dependencies
@@ -91,8 +94,6 @@ Edit `src/consts.ts` to configure your site:
 export const SITE_TITLE = 'Zen Theme Blog';
 export const SITE_DESCRIPTION = 'A clean, modern blog theme with excellent readability.';
 export const AUTHOR_NAME = 'Your Name';
-export const AUTHOR_TITLE = 'Your Title';
-export const AUTHOR_DESCRIPTION = 'Your description';
 
 export const SOCIAL_LINKS = {
   github: 'https://github.com/Secd0g/zen',
@@ -104,15 +105,21 @@ export const SOCIAL_LINKS = {
 
 ### Theme Variables
 
-Edit `src/styles/global.css` to customize the theme:
+Theme colors are defined in `src/layouts/BlogPost.astro`:
 
 ```css
 :root {
   --accent: #F97316;          /* Primary color */
-  --text-primary: #18181B;    /* Primary text */
-  --text-secondary: #3F3F46;  /* Secondary text */
-  --bg-primary: #FFFFFF;      /* Background */
-  --border-color: #E4E4E7;    /* Border color */
+  --accent-hover: #EA580C;     /* Accent hover */
+  --accent-light: #FDBA74;     /* Light accent */
+  --text-primary: #18181B;     /* Primary text */
+  --text-secondary: #3F3F46;   /* Secondary text */
+  --text-muted: #71717A;       /* Muted text */
+  --bg-primary: #FFFFFF;       /* Background */
+  --bg-secondary: #FAFAFA;     /* Secondary background */
+  --bg-tertiary: #F5F5F5;      /* Tertiary background */
+  --border-color: #E4E4E7;     /* Border color */
+  --body-font-size: 17px;      /* Body font size */
 }
 ```
 
@@ -124,7 +131,7 @@ Create new markdown files in `src/content/blog/`:
 ---
 title: Post Title
 description: Post description
-pubDate: 2026-05-13
+pubDate: 2026-05-14
 tags: ["tag1", "tag2"]
 ---
 
@@ -135,16 +142,16 @@ Your content here...
 
 ### Changing Colors
 
-Modify the CSS variables in `src/styles/global.css`:
+Modify the CSS variables in `src/layouts/BlogPost.astro`:
 
-- `--accent`: Primary accent color (default: orange)
+- `--accent`: Primary accent color (default: #F97316)
 - `--text-primary`: Main text color
 - `--bg-primary`: Background color
 - `--border-color`: Border color
 
 ### Changing Fonts
 
-The theme uses Inter font by default. You can change the font in `src/styles/global.css`:
+The theme uses Inter font by default. You can change the font in `src/layouts/BlogPost.astro`:
 
 ```css
 body {
@@ -158,6 +165,7 @@ body {
 - Inter font family for optimal readability
 - Line height: 1.9 for comfortable reading
 - Letter spacing: -0.01em for better text density
+- Font size: 17px for body text
 
 ### Color Scheme
 

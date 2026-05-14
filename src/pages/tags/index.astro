@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
 
 const posts = await getCollection('blog');
 const tagMap = new Map();
@@ -25,24 +26,6 @@ const tags = Array.from(tagMap.entries())
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <script is:inline>
-    (function() {
-      const STORAGE_KEY = 'astro-theme';
-      let theme = null;
-      
-      if (typeof localStorage !== 'undefined') {
-        theme = localStorage.getItem(STORAGE_KEY);
-      }
-      
-      if (!theme || theme === 'auto') {
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add('dark');
-        }
-      } else if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      }
-    })();
-  </script>
   <BaseHead title="Tags" />
   <style>
     main {
@@ -138,5 +121,6 @@ const tags = Array.from(tagMap.entries())
       ))}
     </div>
   </main>
+  <Footer />
 </body>
 </html>

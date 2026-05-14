@@ -13,24 +13,6 @@ const renderedContent = aboutContent ? marked(aboutContent.body) : '';
 <!doctype html>
 <html lang="zh-CN">
 	<head>
-		<script is:inline>
-			(function() {
-				const STORAGE_KEY = 'astro-theme';
-				let theme = null;
-				
-				if (typeof localStorage !== 'undefined') {
-					theme = localStorage.getItem(STORAGE_KEY);
-				}
-				
-				if (!theme || theme === 'auto') {
-					if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-						document.documentElement.classList.add('dark');
-					}
-				} else if (theme === 'dark') {
-					document.documentElement.classList.add('dark');
-				}
-			})();
-		</script>
 		<BaseHead title="About" description="Learn more about me" />
 		<style>
 			.about-section {

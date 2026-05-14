@@ -14,30 +14,6 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
 
 <html lang="zh-cn">
   <head>
-    <script is:inline>
-      (function() {
-        const STORAGE_KEY = 'astro-theme';
-        let theme = null;
-
-        if (typeof localStorage !== 'undefined') {
-          theme = localStorage.getItem(STORAGE_KEY);
-        }
-
-        if (!theme || theme === 'auto') {
-          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.classList.add('dark');
-            document.documentElement.setAttribute('data-theme', 'dark');
-          } else {
-            document.documentElement.setAttribute('data-theme', 'light');
-          }
-        } else if (theme === 'dark') {
-          document.documentElement.classList.add('dark');
-          document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-          document.documentElement.setAttribute('data-theme', 'light');
-        }
-      })();
-    </script>
     <BaseHead title={title} description={description} />
     <style>
       :root {
@@ -453,14 +429,16 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
       }
 
       .sidebar {
-        display: block;
-        position: fixed;
-        left: calc(50% + 360px);
-        top: 7rem;
-        width: 240px;
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        position: fixed;
+        left: calc(50% + 360px);
+        top: 7rem;
+        bottom: 12rem;
+        width: 240px;
+        height: auto;
+        max-height: calc(100vh - 20rem);
       }
 
       @media (max-width: 1200px) {
@@ -473,7 +451,8 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
         background-color: var(--bg-secondary);
         border-radius: 12px;
         padding: 1.25rem;
-        max-height: 600px;
+        flex: 1;
+        min-height: 0;
         overflow-y: auto;
       }
 
@@ -732,13 +711,14 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
         const tocContainer = document.querySelector('.toc');
         const tocLinks = document.querySelectorAll('[data-toc-link]');
         const allHeadings = Array.from(document.querySelectorAll('.prose h1, .prose h2, .prose h3'));
+        let isScrolling = false;
 
         function highlightHeading(index) {
           if (index >= 0 && index < tocLinks.length) {
             tocLinks.forEach((link, i) => {
               link.classList.toggle('active', i === index);
             });
-            if (tocContainer) {
+            if (tocContainer && !isScrolling) {
               const activeLink = tocLinks[index];
               const linkOffset = activeLink.offsetTop;
               const containerHeight = tocContainer.offsetHeight;
@@ -760,7 +740,7 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
             btn?.classList.remove('show');
           }
 
-          if (allHeadings.length === 0 || tocLinks.length === 0) return;
+          if (isScrolling || allHeadings.length === 0 || tocLinks.length === 0) return;
 
           const scrollPosition = window.scrollY;
           const docHeight = document.documentElement.scrollHeight;
@@ -805,16 +785,40 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
         tocLinks.forEach((link, index) => {
           link.addEventListener('click', (e) => {
             e.preventDefault();
-            highlightHeading(index);
             const targetId = link.getAttribute('href').substring(1);
             const target = document.getElementById(targetId);
             if (target) {
               const headerHeight = document.querySelector('header')?.offsetHeight || 80;
               const targetPosition = target.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
-              window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+              const currentPosition = window.scrollY;
+              
+              if (Math.abs(targetPosition - currentPosition) < 50) {
+                highlightHeading(index);
+              } else {
+                isScrolling = true;
+                highlightHeading(index);
+                window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+                setTimeout(() => {
+                  isScrolling = false;
+                  highlightHeading(index);
+                }, 800);
+              }
             }
           });
         });
+
+        if (tocContainer) {
+          tocContainer.addEventListener('wheel', (e) => {
+            e.stopPropagation();
+            
+            const isAtBottom = tocContainer.scrollTop + tocContainer.clientHeight >= tocContainer.scrollHeight - 10;
+            const isAtTop = tocContainer.scrollTop <= 10;
+            
+            if ((isAtBottom && e.deltaY > 0) || (isAtTop && e.deltaY < 0)) {
+              e.preventDefault();
+            }
+          }, { passive: false });
+        }
 
         const images = document.querySelectorAll('.prose img');
         const modal = document.getElementById('image-modal');
@@ -843,6 +847,12 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
           if (e.key === 'Escape' && modal.classList.contains('show')) {
             closeModal();
           }
+        });
+
+        document.addEventListener('ecThemeChange', () => {
+          document.querySelectorAll('.expressive-code').forEach(el => {
+            el.classList.toggle('dark', document.documentElement.classList.contains('dark'));
+          });
         });
       });
     </script>

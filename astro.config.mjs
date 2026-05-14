@@ -31,6 +31,11 @@ export default defineConfig({
 				showCopyButton: true,
 				showLanguageBadge: true,
 			},
+			useDarkModeMediaQuery: false,
+			themeCssSelector: (theme) => {
+				if (theme.name === 'github-dark') return '.dark';
+				return false;
+			},
 		}),
 		mdx(),
 		sitemap(),

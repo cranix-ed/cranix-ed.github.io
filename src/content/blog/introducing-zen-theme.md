@@ -1,8 +1,8 @@
 ---
 title: Introducing Zen Theme
-description: A clean, modern theme inspired by Zen Browser's documentation design
-pubDate: 2026-05-13
-tags: ["theme", "design", "zen"]
+description: A clean, modern theme inspired by Zen Browser's documentation design with excellent readability and beautiful typography.
+pubDate: 2026-05-14
+tags: ["theme", "design", "zen", "astro", "blog"]
 ---
 
 ## Quick Installation
@@ -25,7 +25,7 @@ npm install
 
 ### Step 3: Add Inter Font
 
-Add the Inter font to your `src/layouts/BaseLayout.astro` or main HTML file:
+Add the Inter font to your HTML head:
 
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,7 +35,7 @@ Add the Inter font to your `src/layouts/BaseLayout.astro` or main HTML file:
 
 ### Step 4: Apply Theme Styles
 
-Copy the theme CSS variables to `src/styles/global.css`:
+Copy the theme CSS variables to your stylesheet:
 
 ```css
 :root {
@@ -45,15 +45,18 @@ Copy the theme CSS variables to `src/styles/global.css`:
   --text-primary: #18181B;
   --text-secondary: #3F3F46;
   --text-muted: #71717A;
+  --text-faint: #A1A1AA;
   --bg-primary: #FFFFFF;
   --bg-secondary: #FAFAFA;
+  --bg-tertiary: #F5F5F5;
   --border-color: #E4E4E7;
+  --body-font-size: 17px;
 }
 ```
 
 ## Overview
 
-The Zen theme is a clean, modern design theme inspired by the Zen Browser documentation website. It features a minimalistic approach with warm orange accents and excellent readability.
+The Zen theme is a clean, modern design theme inspired by the Zen Browser documentation website. It features a minimalistic approach with warm orange accents, excellent readability, and thoughtful typography choices.
 
 ## Key Features
 
@@ -61,25 +64,39 @@ The Zen theme is a clean, modern design theme inspired by the Zen Browser docume
 - **Font**: Inter font family for optimal readability
 - **Line Height**: 1.9 for comfortable reading experience
 - **Letter Spacing**: -0.01em for better text density
+- **Font Size**: 17px for body text
 
 ### Color Scheme
 
 **Light Mode:**
 - Primary: #F97316 (Warm Orange)
-- Background: #FFFFFF
+- Background: #FFFFFF (Primary), #FAFAFA (Secondary), #F5F5F5 (Tertiary)
 - Text: #18181B (Primary), #3F3F46 (Secondary), #71717A (Muted)
 - Border: #E4E4E7
 
 **Dark Mode:**
 - Primary: #FB923C (Lighter Orange)
-- Background: #18181B
+- Background: #18181B (Primary), #27272A (Secondary), #3F3F46 (Tertiary)
 - Text: #FAFAFA (Primary), #D4D4D8 (Secondary), #71717A (Muted)
 - Border: #3F3F46
 
 ### Layout
 - **Content Width**: 700px for optimal reading line length
 - **Responsive Design**: Fully responsive for mobile and desktop
-- **Sidebar TOC**: Fixed table of contents for easy navigation
+- **Sidebar TOC**: Fixed table of contents for easy navigation in long articles
+- **Back to Top**: Smooth scroll back to top button
+
+### Search Functionality
+- Built-in search powered by Pagefind
+- Real-time search results
+- Highlighted search terms
+- Support for articles and sections
+
+### Blog Features
+- **Year Grouping**: Blog posts organized by year
+- **Tag Pages**: Browse posts by tags
+- **Search Integration**: Site-wide search capability
+- **Pagination Removed**: All posts displayed in a single scrollable list
 
 ## Configuration
 
@@ -95,9 +112,12 @@ The theme uses CSS custom properties for easy customization:
   --text-primary: #18181B;
   --text-secondary: #3F3F46;
   --text-muted: #71717A;
+  --text-faint: #A1A1AA;
   --bg-primary: #FFFFFF;
   --bg-secondary: #FAFAFA;
+  --bg-tertiary: #F5F5F5;
   --border-color: #E4E4E7;
+  --body-font-size: 17px;
 }
 ```
 
@@ -110,10 +130,12 @@ The theme automatically switches between light and dark modes based on user pref
 ```css
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 17px;
+  font-size: var(--body-font-size);
   line-height: 1.9;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 ```
 
@@ -166,10 +188,10 @@ Here's how to configure the Zen theme parameters:
 
 | Parameter | Value | File Location |
 |-----------|-------|---------------|
-| Accent Color | `#F97316` | `src/styles/global.css` (CSS variable `--accent`) |
-| Font Family | Inter | `src/styles/global.css` |
-| Font Size | 17px | `src/styles/global.css` (CSS variable `--body-font-size`) |
-| Line Height | 1.9 | `src/styles/global.css` |
+| Accent Color | `#F97316` | `src/layouts/BlogPost.astro` (CSS variable `--accent`) |
+| Font Family | Inter | `src/layouts/BlogPost.astro` |
+| Font Size | 17px | `src/layouts/BlogPost.astro` (CSS variable `--body-font-size`) |
+| Line Height | 1.9 | `src/layouts/BlogPost.astro` |
 | Content Width | 700px | `src/layouts/BlogPost.astro` |
 | Site Title | Your Blog Name | `src/consts.ts` |
 | Social Links | GitHub, Twitter, etc. | `src/consts.ts` (`SOCIAL_LINKS`) |
@@ -187,6 +209,7 @@ The Zen theme follows these core design principles:
 2. **Visual Hierarchy**: Clear distinction between headings, body text, and metadata
 3. **Consistency**: Uniform spacing and sizing across all components
 4. **Accessibility**: Proper contrast ratios and semantic HTML
+5. **Performance**: Optimized for fast loading and smooth interactions
 
 ## Configuration Files
 
@@ -195,11 +218,9 @@ The Zen theme follows these core design principles:
 Blog title, description, and author information are configured in `src/consts.ts`:
 
 ```typescript
-export const SITE_TITLE = 'My Blog';
-export const SITE_DESCRIPTION = 'Welcome to my website!';
-export const AUTHOR_NAME = 'Bob';
-export const AUTHOR_TITLE = 'Full Stack Developer / Technical Writer';
-export const AUTHOR_DESCRIPTION = 'Passionate about technology...';
+export const SITE_TITLE = 'Zen Theme Blog';
+export const SITE_DESCRIPTION = 'A clean, modern blog theme with excellent readability.';
+export const AUTHOR_NAME = 'Your Name';
 ```
 
 ### Astro Configuration
@@ -224,14 +245,14 @@ Blog posts are stored in the `src/content/blog/` directory as Markdown files wit
 ---
 title: Post Title
 description: Post description
-pubDate: 2026-05-13
+pubDate: 2026-05-14
 tags: ["tag1", "tag2"]
 ---
 ```
 
 ### Theme Variables
 
-All theme colors and typography settings are defined in `src/styles/global.css` using CSS custom properties.
+All theme colors and typography settings are defined using CSS custom properties directly in the layout files.
 
 ## Getting Started
 
@@ -246,8 +267,6 @@ To use the Zen theme in your project:
 
 ## Conclusion
 
-The Zen theme provides a clean, modern foundation for technical documentation and blogs. Its focus on readability and minimalism makes it perfect for content-heavy websites.
+The Zen theme provides a clean, modern foundation for technical documentation and blogs. Its focus on readability and minimalism makes it perfect for content-heavy websites. The thoughtful design choices ensure that readers can focus on your content without distractions.
 
 ---
-
-
