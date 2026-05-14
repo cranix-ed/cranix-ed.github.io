@@ -72,7 +72,7 @@ const isDark = 'dark';
 			const devHint = this.querySelector('.dev-hint');
 			
 			let searchTimeout = null;
-			let pagefind = null;
+			let pagefindReady = false;
 			let isLoading = false;
 
 			const closeModal = () => {
@@ -107,19 +107,32 @@ const isDark = 'dark';
 				window.removeEventListener('click', onClick);
 			});
 
-			const loadPagefind = async () => {
-				if (pagefind || isLoading) return;
-				isLoading = true;
-				try {
-					const pagefindModule = await import('pagefind');
-					await pagefindModule.init();
-					pagefind = pagefindModule;
-					isLoading = false;
-					return true;
-				} catch (error) {
-					isLoading = false;
-					return false;
-				}
+			const loadPagefind = () => {
+				return new Promise((resolve) => {
+					if (pagefindReady) {
+						resolve(true);
+						return;
+					}
+					if (isLoading) {
+						setTimeout(() => loadPagefind().then(resolve), 100);
+						return;
+					}
+
+					isLoading = true;
+					
+					const script = document.createElement('script');
+					script.src = `${window.location.origin}/pagefind/pagefind.js`;
+					script.onload = () => {
+						pagefindReady = true;
+						isLoading = false;
+						resolve(true);
+					};
+					script.onerror = () => {
+						isLoading = false;
+						resolve(false);
+					};
+					document.head.appendChild(script);
+				});
 			};
 
 			searchInput.addEventListener('input', async (e) => {
@@ -136,18 +149,16 @@ const isDark = 'dark';
 				}
 
 				searchTimeout = setTimeout(async () => {
-					if (!pagefind) {
-						const success = await loadPagefind();
-						if (!success) {
-							resultsCount.textContent = 'Search unavailable';
-							resultsContainer.innerHTML = '';
-							devHint.style.display = 'block';
-							return;
-						}
+					const success = await loadPagefind();
+					if (!success) {
+						resultsCount.textContent = 'Search unavailable';
+						resultsContainer.innerHTML = '';
+						devHint.style.display = 'block';
+						return;
 					}
 
 					try {
-						const results = await pagefind.search(query);
+						const results = await window.pagefind.search(query);
 						displayResults(results, query);
 					} catch (error) {
 						resultsCount.textContent = 'Search unavailable';
