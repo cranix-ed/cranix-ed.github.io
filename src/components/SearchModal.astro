@@ -18,42 +18,47 @@ const isDark = 'dark';
 			<kbd>Ctrl</kbd><kbd>K</kbd>
 		</kbd>
 	</button>
-	<dialog aria-label="Search">
-		<div class="search-modal">
-			<div class="search-header">
-				<svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<circle cx="11" cy="11" r="8"/>
-					<path d="m21 21-4.35-4.35"/>
-				</svg>
-				<input 
-					type="text" 
-					class="search-input" 
-					placeholder="Search..." 
-					autocomplete="off"
-					spellcheck="false"
-				/>
-				<button class="search-clear" style="display: none;">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<line x1="18" y1="6" x2="6" y2="18"/>
-						<line x1="6" y1="6" x2="18" y2="18"/>
+	<dialog style="padding:0" aria-label="Search">
+		<div class="dialog-frame">
+			<button data-close-modal class="close-btn">
+				Cancel
+			</button>
+			<div class="search-container">
+				<form class="search-form" role="search">
+					<svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="11" cy="11" r="8"/>
+						<path d="m21 21-4.35-4.35"/>
 					</svg>
-				</button>
-				<span class="search-shortcut-modal">
-					<kbd>ESC</kbd>
-				</span>
-			</div>
-			<div class="search-results">
-				<div class="search-loading" style="display: none;">
-					<div class="spinner"></div>
-					<span>Loading...</span>
+					<input 
+						type="text" 
+						class="search-input" 
+						placeholder="Search..." 
+						autocomplete="off"
+						spellcheck="false"
+					/>
+					<button type="button" class="search-clear" style="display: none;">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="18" y1="6" x2="6" y2="18"/>
+							<line x1="6" y1="6" x2="18" y2="18"/>
+						</svg>
+					</button>
+				</form>
+				<div class="results-info" style="display: none;">
+					<span class="results-count"></span> results for <mark class="search-term"></mark>
 				</div>
-				<div class="search-empty" style="display: none;">
-					<p>No results found for "<span class="search-term"></span>"</p>
+				<div class="search-results">
+					<div class="search-loading" style="display: none;">
+						<div class="spinner"></div>
+						<span>Loading...</span>
+					</div>
+					<div class="search-empty" style="display: none;">
+						<p>No results found for "<span class="search-term"></span>"</p>
+					</div>
+					<div class="search-error" style="display: none;">
+						<p>Search is unavailable. Please try again later.</p>
+					</div>
+					<div class="results-list"></div>
 				</div>
-				<div class="search-error" style="display: none;">
-					<p>Search is unavailable. Please try again later.</p>
-				</div>
-				<div class="results-list"></div>
 			</div>
 		</div>
 	</dialog>
@@ -78,17 +83,20 @@ const isDark = 'dark';
 		constructor() {
 			super();
 			const openBtn = this.querySelector('button[data-open-modal]');
+			const closeBtn = this.querySelector('button[data-close-modal]');
 			const dialog = this.querySelector('dialog');
+			const dialogFrame = this.querySelector('.dialog-frame');
 			const input = this.querySelector('.search-input');
 			const clearBtn = this.querySelector('.search-clear');
 			const resultsList = this.querySelector('.results-list');
 			const loading = this.querySelector('.search-loading');
 			const empty = this.querySelector('.search-empty');
 			const error = this.querySelector('.search-error');
-			const searchTerm = this.querySelector('.search-term');
+			const resultsInfo = this.querySelector('.results-info');
+			const resultsCount = this.querySelector('.results-info .results-count');
+			const searchTermElements = this.querySelectorAll('.search-term');
 
 			let searchTimeout = null;
-			let isLoading = false;
 
 			const closeModal = () => {
 				if (dialog.open) {
@@ -99,6 +107,7 @@ const isDark = 'dark';
 					resultsList.innerHTML = '';
 					empty.style.display = 'none';
 					error.style.display = 'none';
+					resultsInfo.style.display = 'none';
 				}
 			};
 
@@ -106,26 +115,33 @@ const isDark = 'dark';
 				loading.style.display = 'flex';
 				empty.style.display = 'none';
 				error.style.display = 'none';
+				resultsInfo.style.display = 'none';
 				resultsList.innerHTML = '';
 			};
 
 			const showResults = (results) => {
 				loading.style.display = 'none';
 				error.style.display = 'none';
+				
 				if (results.length === 0) {
-					searchTerm.textContent = input.value;
+					searchTermElements.forEach(el => el.textContent = input.value);
 					empty.style.display = 'flex';
+					resultsInfo.style.display = 'none';
 					resultsList.innerHTML = '';
 					return;
 				}
 
+				resultsCount.textContent = results.length;
+				searchTermElements.forEach(el => el.textContent = input.value);
+				resultsInfo.style.display = 'block';
 				empty.style.display = 'none';
-				resultsList.innerHTML = results.map(result => this.renderResult(result)).join('');
+				resultsList.innerHTML = this.renderResults(results);
 			};
 
 			const showError = () => {
 				loading.style.display = 'none';
 				empty.style.display = 'none';
+				resultsInfo.style.display = 'none';
 				error.style.display = 'flex';
 				resultsList.innerHTML = '';
 			};
@@ -137,18 +153,43 @@ const isDark = 'dark';
 				return text.replace(regex, '<mark>$1</mark>');
 			};
 
-			this.renderResult = (result) => {
-				const title = highlightText(result.title || result.url.split('/').pop().replace(/-/g, ' '), input.value);
-				const excerpt = result.excerpt ? highlightText(result.excerpt.substring(0, 150) + '...', input.value) : '';
-				const path = result.url.replace('/blog/', '');
-				
-				return `
-					<a href="${result.url}" class="result-item">
-						<div class="result-title">${title}</div>
-						${excerpt ? `<div class="result-excerpt">${excerpt}</div>` : ''}
-						<div class="result-path">/${path}</div>
-					</a>
-				`;
+			this.renderResults = (results) => {
+				return results.map(result => {
+					const title = highlightText(result.title || result.url.split('/').pop().replace(/-/g, ' '), input.value);
+					const subResults = result.sub_results || [];
+					
+					let subResultHtml = '';
+					if (subResults.length > 0) {
+						subResultHtml = subResults.map(sub => {
+							const subTitle = highlightText(sub.title || '', input.value);
+							return `
+								<a href="${sub.url}" class="result-item result-nested">
+									<span class="tree-line"></span>
+									<span class="tree-corner"></span>
+									<span class="result-content">
+										<span class="result-title">${subTitle}</span>
+										${sub.excerpt ? `<span class="result-excerpt">${highlightText(sub.excerpt.substring(0, 150) + '...', input.value)}</span>` : ''}
+									</span>
+								</a>
+							`;
+						}).join('');
+					}
+					
+					const path = result.url.replace(/^\/+/, '');
+					
+					return `
+						<div class="result-group">
+							<a href="${result.url}" class="result-item result-main">
+								<span class="page-icon"></span>
+								<span class="result-content">
+									<span class="result-title">${title}</span>
+									<span class="result-path">/${path}</span>
+								</span>
+							</a>
+							${subResultHtml}
+						</div>
+					`;
+				}).join('');
 			};
 
 			const performSearch = async (query) => {
@@ -157,11 +198,11 @@ const isDark = 'dark';
 					loading.style.display = 'none';
 					empty.style.display = 'none';
 					error.style.display = 'none';
+					resultsInfo.style.display = 'none';
 					return;
 				}
 
 				showLoading();
-				isLoading = true;
 
 				try {
 					const response = await fetch(`/pagefind/search?q=${encodeURIComponent(query)}`);
@@ -179,18 +220,23 @@ const isDark = 'dark';
 							title = urlParts[urlParts.length - 1].replace(/-/g, ' ');
 						}
 						
+						const subResults = result.sub_results?.map(sub => ({
+							url: sub.url,
+							title: sub.title || '',
+							excerpt: sub.excerpt || ''
+						})) || [];
+						
 						results.push({
 							url: result.url,
 							title,
-							excerpt
+							excerpt,
+							subResults
 						});
 					}
 					
 					showResults(results);
 				} catch {
 					showError();
-				} finally {
-					isLoading = false;
 				}
 			};
 
@@ -203,14 +249,20 @@ const isDark = 'dark';
 				}, 150);
 			};
 
-			const openModal = () => {
+			const openModal = (event) => {
 				dialog.showModal();
 				document.body.toggleAttribute('data-search-modal-open', true);
 				input.focus();
+				event?.stopPropagation();
 			};
 
 			openBtn.addEventListener('click', openModal);
 			openBtn.disabled = false;
+			closeBtn.addEventListener('click', closeModal);
+
+			dialog.addEventListener('close', () => {
+				document.body.toggleAttribute('data-search-modal-open', false);
+			});
 
 			input.addEventListener('input', handleInput);
 			input.addEventListener('keydown', (e) => {
@@ -224,11 +276,8 @@ const isDark = 'dark';
 				clearBtn.style.display = 'none';
 				resultsList.innerHTML = '';
 				empty.style.display = 'none';
+				resultsInfo.style.display = 'none';
 				input.focus();
-			});
-
-			dialog.addEventListener('close', () => {
-				document.body.toggleAttribute('data-search-modal-open', false);
 			});
 
 			window.addEventListener('keydown', (e) => {
@@ -313,7 +362,7 @@ const isDark = 'dark';
 		font-size: 0.625rem;
 		padding-inline: 0.375rem;
 		padding-block: 0.125rem;
-		background-color: #f3f4f6;
+		background-color: var(--bg-tertiary);
 		font-family: ui-monospace, SFMono-Regular, monospace;
 		min-width: 1.125rem;
 		text-align: center;
@@ -321,19 +370,23 @@ const isDark = 'dark';
 
 	dialog {
 		margin: 0;
-		background: transparent;
-		border: none;
+		background-color: var(--bg-primary);
+		border: 1px solid var(--border-color);
 		width: 100%;
 		max-width: 100%;
 		height: 100%;
 		max-height: 100%;
-		padding: 1rem;
+		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 	}
 
 	dialog[open] {
 		display: flex;
-		align-items: flex-start;
-		justify-content: center;
+		animation: fadeIn 0.2s ease-out;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
 	}
 
 	dialog::backdrop {
@@ -342,41 +395,60 @@ const isDark = 'dark';
 		backdrop-filter: blur(4px);
 	}
 
-	.search-modal {
-		width: 100%;
-		max-width: 560px;
-		background-color: #ffffff;
-		border-radius: 16px;
-		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	.dialog-frame {
+		position: relative;
+		overflow: auto;
 		display: flex;
 		flex-direction: column;
-		max-height: 70vh;
-		overflow: hidden;
-		animation: slideIn 0.2s ease-out;
+		flex-grow: 1;
+		padding: 1rem;
 	}
 
-	@keyframes slideIn {
-		from {
-			opacity: 0;
-			transform: translateY(-10px) scale(0.98);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0) scale(1);
+	button[data-close-modal] {
+		display: none;
+		position: absolute;
+		z-index: 1;
+		align-items: center;
+		align-self: flex-end;
+		height: 44px;
+		padding: 0.25rem 0.75rem;
+		border: 0;
+		background: transparent;
+		cursor: pointer;
+		color: var(--accent);
+		font-size: 0.875rem;
+	}
+
+	@media (max-width: 50rem) {
+		button[data-close-modal] {
+			display: flex;
 		}
 	}
 
-	.search-header {
+	.search-container {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+	}
+
+	.search-form {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		padding: 0.875rem 1rem;
-		border-bottom: 1px solid #e5e7eb;
-		position: relative;
+		padding: 0.5rem 0.75rem;
+		border: 2px solid var(--border-color);
+		border-radius: 0.5rem;
+		background-color: var(--bg-primary);
+		transition: border-color 0.2s;
+	}
+
+	.search-form:focus-within {
+		border-color: var(--accent);
 	}
 
 	.search-icon {
-		color: #9ca3af;
+		color: var(--text-muted);
 		flex-shrink: 0;
 	}
 
@@ -386,51 +458,50 @@ const isDark = 'dark';
 		outline: none;
 		font-size: 1rem;
 		background: transparent;
-		color: #1f2937;
+		color: var(--text-primary);
 		font-family: inherit;
 	}
 
 	.search-input::placeholder {
-		color: #9ca3af;
+		color: var(--text-muted);
 	}
 
 	.search-clear {
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		width: 28px;
+		height: 28px;
 		border: none;
-		background: none;
-		color: #9ca3af;
+		background: var(--accent);
+		color: white;
 		cursor: pointer;
-		padding: 0.25rem;
-		border-radius: 6px;
-		transition: color 0.15s, background-color 0.15s;
+		border-radius: 50%;
+		transition: background-color 0.15s;
+		padding: 0;
 	}
 
 	.search-clear:hover {
-		color: #1f2937;
-		background-color: #f3f4f6;
+		background-color: var(--accent-hover);
 	}
 
-	.search-shortcut-modal {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background-color: #f3f4f6;
-		padding: 0.25rem 0.5rem;
-		border-radius: 6px;
-	}
-
-	.search-shortcut-modal kbd {
+	.results-info {
 		font-size: 0.75rem;
+		color: var(--text-muted);
+		margin: 0.75rem 0 0.5rem;
 		font-family: ui-monospace, SFMono-Regular, monospace;
-		color: #6b7280;
+	}
+
+	.results-info mark {
+		background-color: rgba(251, 191, 36, 0.3);
+		color: var(--text-primary);
+		padding: 0 2px;
+		border-radius: 2px;
 	}
 
 	.search-results {
 		flex: 1;
 		overflow-y: auto;
-		padding: 0.5rem;
 	}
 
 	.search-loading,
@@ -441,23 +512,21 @@ const isDark = 'dark';
 		align-items: center;
 		justify-content: center;
 		padding: 3rem 1rem;
-		color: #6b7280;
+		color: var(--text-muted);
 	}
 
 	.spinner {
 		width: 32px;
 		height: 32px;
-		border: 2px solid #e5e7eb;
-		border-top-color: #3b82f6;
+		border: 2px solid var(--border-color);
+		border-top-color: var(--accent);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 		margin-bottom: 0.75rem;
 	}
 
 	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
+		to { transform: rotate(360deg); }
 	}
 
 	.search-empty p,
@@ -466,44 +535,74 @@ const isDark = 'dark';
 		text-align: center;
 	}
 
-	.search-term {
+	.search-empty .search-term {
 		font-weight: 500;
-		color: #1f2937;
+		color: var(--text-primary);
 	}
 
 	.results-list {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
+		gap: 0.5rem;
+	}
+
+	.result-group {
+		display: flex;
+		flex-direction: column;
 	}
 
 	.result-item {
 		display: flex;
-		flex-direction: column;
+		align-items: flex-start;
 		padding: 0.75rem 0.875rem;
-		border-radius: 8px;
+		border-radius: 0.3125rem;
 		text-decoration: none;
 		color: inherit;
 		transition: background-color 0.15s;
+		position: relative;
 	}
 
 	.result-item:hover {
-		background-color: #f9fafb;
+		background-color: var(--bg-secondary);
+	}
+
+	.result-main {
+		background-color: var(--bg-secondary);
+	}
+
+	.result-main:hover {
+		background-color: var(--bg-tertiary);
+	}
+
+	.page-icon {
+		width: 1.875rem;
+		height: 1.875rem;
+		background: var(--text-muted);
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M9 10h1a1 1 0 1 0 0-2H9a1 1 0 0 0 0 2Zm0 2a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2H9Zm11-3V8l-6-6a1 1 0 0 0-1 0H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V9Zm-6-4 3 3h-2a1 1 0 0 1-1-1V5Zm4 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5v3a3 3 0 0 0 3 3h3v9Zm-3-3H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2Z'/%3E%3C/svg%3E") center no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M9 10h1a1 1 0 1 0 0-2H9a1 1 0 0 0 0 2Zm0 2a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2H9Zm11-3V8l-6-6a1 1 0 0 0-1 0H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V9Zm-6-4 3 3h-2a1 1 0 0 1-1-1V5Zm4 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5v3a3 3 0 0 0 3 3h3v9Zm-3-3H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2Z'/%3E%3C/svg%3E") center no-repeat;
+		flex-shrink: 0;
+		margin-right: 0.75rem;
+	}
+
+	.result-content {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-width: 0;
 	}
 
 	.result-title {
 		font-size: 0.9375rem;
-		font-weight: 500;
-		color: #1f2937;
-		margin-bottom: 0.25rem;
+		font-weight: 600;
+		color: var(--text-primary);
 		line-height: 1.4;
 	}
 
 	.result-excerpt {
 		font-size: 0.8125rem;
-		color: #6b7280;
+		color: var(--text-secondary);
 		line-height: 1.5;
-		margin-bottom: 0.25rem;
+		margin-top: 0.25rem;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
@@ -512,95 +611,160 @@ const isDark = 'dark';
 
 	.result-path {
 		font-size: 0.75rem;
-		color: #9ca3af;
+		color: var(--text-muted);
 		font-family: ui-monospace, SFMono-Regular, monospace;
+		margin-top: 0.25rem;
+	}
+
+	.result-nested {
+		padding-left: 3.75rem;
+		padding-right: 0.875rem;
+		background-color: transparent;
+	}
+
+	.result-nested:hover {
+		background-color: var(--bg-secondary);
+	}
+
+	.tree-line,
+	.tree-corner {
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 0.125rem;
+		background-color: var(--border-color);
+	}
+
+	.tree-corner {
+		width: 1rem;
+		height: 0.125rem;
+		background-color: var(--border-color);
+		top: 1rem;
+	}
+
+	.result-nested:last-child .tree-line {
+		height: 1rem;
 	}
 
 	.result-item mark {
 		background-color: rgba(251, 191, 36, 0.4);
-		color: #92400e;
+		color: var(--text-primary);
 		padding: 0 2px;
 		border-radius: 2px;
+	}
+
+	@media (min-width: 50rem) {
+		dialog {
+			margin: 4rem auto auto;
+			border-radius: 0.5rem;
+			width: 90%;
+			max-width: 40rem;
+			height: max-content;
+			min-height: 15rem;
+			max-height: calc(100% - 8rem);
+			animation: slideIn 0.2s ease-out;
+		}
+
+		@keyframes slideIn {
+			from {
+				opacity: 0;
+				transform: translateY(-10px) scale(0.98);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		.dialog-frame {
+			padding: 1.5rem;
+		}
+	}
+
+	[data-search-modal-open] {
+		overflow: hidden;
 	}
 
 	html.dark .search-shortcut kbd {
 		background-color: var(--bg-tertiary);
 	}
 
-	html.dark dialog {
-		background: transparent;
-	}
-
-	html.dark .search-modal {
-		background-color: #1e293b;
-	}
-
-	html.dark .search-header {
-		border-bottom-color: #374151;
+	html.dark .search-form {
+		background-color: var(--bg-secondary);
 	}
 
 	html.dark .search-icon {
-		color: #9ca3af;
+		color: var(--text-muted);
 	}
 
 	html.dark .search-input {
-		color: #f9fafb;
+		color: var(--text-primary);
 	}
 
 	html.dark .search-input::placeholder {
-		color: #6b7280;
+		color: var(--text-muted);
 	}
 
-	html.dark .search-clear {
-		color: #9ca3af;
-	}
-
-	html.dark .search-clear:hover {
-		color: #f9fafb;
-		background-color: #374151;
-	}
-
-	html.dark .search-shortcut-modal {
-		background-color: #374151;
-	}
-
-	html.dark .search-shortcut-modal kbd {
-		color: #9ca3af;
+	html.dark .results-info mark {
+		background-color: rgba(251, 191, 36, 0.3);
+		color: var(--text-primary);
 	}
 
 	html.dark .search-loading,
 	html.dark .search-empty,
 	html.dark .search-error {
-		color: #9ca3af;
+		color: var(--text-muted);
 	}
 
-	html.dark .search-term {
-		color: #f9fafb;
+	html.dark .search-empty .search-term {
+		color: var(--text-primary);
 	}
 
 	html.dark .spinner {
-		border-color: #374151;
-		border-top-color: #60a5fa;
+		border-color: var(--border-color);
+		border-top-color: var(--accent);
+	}
+
+	html.dark .result-main {
+		background-color: var(--bg-secondary);
+	}
+
+	html.dark .result-main:hover {
+		background-color: var(--bg-tertiary);
 	}
 
 	html.dark .result-item:hover {
-		background-color: #334155;
+		background-color: var(--bg-secondary);
+	}
+
+	html.dark .result-nested:hover {
+		background-color: var(--bg-secondary);
 	}
 
 	html.dark .result-title {
-		color: #f9fafb;
+		color: var(--text-primary);
 	}
 
 	html.dark .result-excerpt {
-		color: #9ca3af;
+		color: var(--text-secondary);
 	}
 
 	html.dark .result-path {
-		color: #6b7280;
+		color: var(--text-muted);
+	}
+
+	html.dark .page-icon {
+		background: var(--text-muted);
+	}
+
+	html.dark .tree-line,
+	html.dark .tree-corner {
+		background-color: var(--border-color);
 	}
 
 	html.dark .result-item mark {
 		background-color: rgba(251, 191, 36, 0.3);
-		color: #fbbf24;
+		color: var(--text-primary);
 	}
 </style>
