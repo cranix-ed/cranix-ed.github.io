@@ -97,6 +97,24 @@ const isDark = 'dark';
 			const searchTermElements = this.querySelectorAll('.search-term');
 
 			let searchTimeout = null;
+			let pagefindLoaded = false;
+			let pagefindError = false;
+
+			const loadPagefind = async () => {
+				if (pagefindLoaded || pagefindError) return;
+				try {
+					await new Promise((resolve, reject) => {
+						const script = document.createElement('script');
+						script.src = '/pagefind/pagefind.js';
+						script.onload = resolve;
+						script.onerror = reject;
+						document.head.appendChild(script);
+					});
+					pagefindLoaded = true;
+				} catch {
+					pagefindError = true;
+				}
+			};
 
 			const closeModal = () => {
 				if (dialog.open) {
@@ -156,7 +174,7 @@ const isDark = 'dark';
 			this.renderResults = (results) => {
 				return results.map(result => {
 					const title = highlightText(result.title || result.url.split('/').pop().replace(/-/g, ' '), input.value);
-					const subResults = result.sub_results || [];
+					const subResults = result.subResults || [];
 					
 					let subResultHtml = '';
 					if (subResults.length > 0) {
@@ -205,31 +223,33 @@ const isDark = 'dark';
 				showLoading();
 
 				try {
-					const response = await fetch(`/pagefind/search?q=${encodeURIComponent(query)}`);
-					if (!response.ok) throw new Error('Network error');
+					await loadPagefind();
 					
-					const data = await response.json();
+					if (pagefindError) {
+						throw new Error('Pagefind not loaded');
+					}
+
+					const search = await window.Pagefind.search(query);
 					const results = [];
 					
-					for (const result of data.results) {
-						let title = result.meta?.title || '';
-						let excerpt = result.excerpt || '';
+					for (const result of search.results) {
+						const meta = result.meta || {};
+						const subResults = [];
 						
-						if (!title) {
-							const urlParts = result.url.split('/');
-							title = urlParts[urlParts.length - 1].replace(/-/g, ' ');
+						if (result.subResults && result.subResults.length > 0) {
+							for (const sub of result.subResults) {
+								subResults.push({
+									url: sub.url,
+									title: sub.title || '',
+									excerpt: sub.excerpt || ''
+								});
+							}
 						}
-						
-						const subResults = result.sub_results?.map(sub => ({
-							url: sub.url,
-							title: sub.title || '',
-							excerpt: sub.excerpt || ''
-						})) || [];
 						
 						results.push({
 							url: result.url,
-							title,
-							excerpt,
+							title: meta.title || result.url.split('/').pop().replace(/-/g, ' '),
+							excerpt: result.excerpt || '',
 							subResults
 						});
 					}
@@ -254,6 +274,7 @@ const isDark = 'dark';
 				document.body.toggleAttribute('data-search-modal-open', true);
 				input.focus();
 				event?.stopPropagation();
+				loadPagefind();
 			};
 
 			openBtn.addEventListener('click', openModal);
