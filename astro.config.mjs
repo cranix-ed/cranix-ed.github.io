@@ -7,6 +7,13 @@ import { defineConfig, fontProviders } from 'astro/config';
 
 export default defineConfig({
 	site: 'https://example.com',
+	vite: {
+		build: {
+			rollupOptions: {
+				external: ['/pagefind/pagefind.js']
+			}
+		}
+	},
 	integrations: [
 		expressiveCode({
 			themes: ['github-light', 'github-dark'],

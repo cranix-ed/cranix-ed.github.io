@@ -57,7 +57,7 @@ const isDark = 'dark';
 					<div class="search-error" style="display: none;">
 						<p>Search is unavailable. Please try again later.</p>
 					</div>
-					<div class="results-list"></div>
+					<ul class="results-list"></ul>
 				</div>
 			</div>
 		</div>
@@ -79,8 +79,6 @@ const isDark = 'dark';
 </script>
 
 <script>
-	import { PagefindUI } from '@pagefind/default-ui';
-
 	class SiteSearch extends HTMLElement {
 		constructor() {
 			super();
@@ -98,7 +96,41 @@ const isDark = 'dark';
 			const searchTermElements = this.querySelectorAll('.search-term');
 
 			let searchTimeout = null;
-			let pagefindUI = null;
+			let pagefindLoaded = false;
+			let pagefindLoading = false;
+
+			const loadPagefind = async () => {
+				if (window.Pagefind) {
+					pagefindLoaded = true;
+					return;
+				}
+				if (pagefindLoading) {
+					let attempts = 0;
+					while (!window.Pagefind && attempts < 20) {
+						await new Promise(r => setTimeout(r, 100));
+						attempts++;
+					}
+					if (window.Pagefind) {
+						pagefindLoaded = true;
+					}
+					return;
+				}
+				
+				pagefindLoading = true;
+				
+				try {
+					const module = await import('/pagefind/pagefind.js');
+					window.Pagefind = {
+						search: module.search,
+						debouncedSearch: module.debouncedSearch,
+						init: module.init
+					};
+					pagefindLoaded = true;
+				} catch (err) {
+					console.error('Failed to load Pagefind:', err);
+					pagefindLoading = false;
+				}
+			};
 
 			const closeModal = () => {
 				if (dialog.open) {
@@ -155,41 +187,40 @@ const isDark = 'dark';
 				return text.replace(regex, '<mark>$1</mark>');
 			};
 
+			const cleanText = (text) => {
+				if (!text) return '';
+				let clean = text.replace(/<[^>]*>/g, '');
+				clean = clean.replace(/\s+/g, ' ').trim();
+				return clean;
+			};
+
 			this.renderResults = (results) => {
 				return results.map(result => {
-					const title = highlightText(result.title || result.url.split('/').pop().replace(/-/g, ' '), input.value);
-					const subResults = result.subResults || [];
-					
-					let subResultHtml = '';
-					if (subResults.length > 0) {
-						subResultHtml = subResults.map(sub => {
-							const subTitle = highlightText(sub.title || '', input.value);
-							return `
-								<a href="${sub.url}" class="result-item result-nested">
-									<span class="tree-line"></span>
-									<span class="tree-corner"></span>
-									<span class="result-content">
-										<span class="result-title">${subTitle}</span>
-										${sub.excerpt ? `<span class="result-excerpt">${highlightText(sub.excerpt.substring(0, 150) + '...', input.value)}</span>` : ''}
-									</span>
-								</a>
-							`;
-						}).join('');
-					}
-					
-					const path = result.url.replace(/^\/+/, '');
+					const title = highlightText(result.title, input.value);
+					const date = result.date || '';
+					const excerpt = result.excerpt ? highlightText(result.excerpt, input.value) : '';
 					
 					return `
-						<div class="result-group">
-							<a href="${result.url}" class="result-item result-main">
-								<span class="page-icon"></span>
-								<span class="result-content">
-									<span class="result-title">${title}</span>
-									<span class="result-path">/${path}</span>
-								</span>
+						<li style="background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; overflow: hidden; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)',this.style.borderColor='#d1d5db'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)',this.style.borderColor='#e5e7eb'">
+							<a href="${result.url}" style="display: block; padding: 1rem; text-decoration: none; color: inherit;">
+								<div style="display: flex; align-items: center; gap: 0.75rem;">
+									<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+										<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+										<polyline points="14 2 14 8 20 8"/>
+										<line x1="16" y1="13" x2="8" y2="13"/>
+										<line x1="16" y1="17" x2="8" y2="17"/>
+										<polyline points="10 9 9 9 8 9"/>
+									</svg>
+									<div style="flex: 1; min-width: 0;">
+										<div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+											<span style="font-weight: 600; color: #1f2937; font-size: 0.95rem; line-height: 1.4;">${title}</span>
+											${date ? `<span style="font-size: 0.7rem; color: #9ca3af; font-family: ui-monospace, SFMono-Regular, monospace; white-space: nowrap; background: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 0.25rem;">${date}</span>` : ''}
+										</div>
+										${excerpt ? `<p style="margin: 0.5rem 0 0 0; padding: 0; font-size: 0.825rem; color: #6b7280; line-height: 1.6; padding-left: 0.25rem; border-left: 3px solid #e5e7eb;">${excerpt}</p>` : ''}
+									</div>
+								</div>
 							</a>
-							${subResultHtml}
-						</div>
+						</li>
 					`;
 				}).join('');
 			};
@@ -207,39 +238,48 @@ const isDark = 'dark';
 				showLoading();
 
 				try {
-					if (!pagefindUI) {
-						pagefindUI = await PagefindUI.create({
-							baseUrl: '',
-							bundlePath: '/pagefind/',
-							showImages: false,
-							showSubResults: true
-						});
+					await loadPagefind();
+
+					if (!window.Pagefind) {
+						throw new Error('Pagefind not loaded');
 					}
 
-					const search = await pagefindUI.search(query);
+					const search = await window.Pagefind.search(query);
 					const results = [];
 					
+					const urlMap = new Map();
+					
 					for (const result of search.results) {
-						const meta = result.meta || {};
-						const subResults = [];
+						const data = await result.data();
+						const pageUrl = data.url || '/';
 						
-						if (result.subResults && result.subResults.length > 0) {
-							for (const sub of result.subResults) {
-								subResults.push({
-									url: sub.url,
-									title: sub.title || '',
-									excerpt: sub.excerpt || ''
-								});
-							}
+						if (!pageUrl.startsWith('/blog/')) continue;
+						if (urlMap.has(pageUrl)) continue;
+						
+						const urlParts = pageUrl.split('/').filter(p => p && p !== 'index.html' && p !== 'index');
+						let pageTitle = urlParts[urlParts.length - 1] || 'Untitled';
+						pageTitle = pageTitle.replace(/-/g, ' ').replace(/\.html?$/i, '').trim();
+						
+						let pageDate = '';
+						if (data.meta?.date) {
+							pageDate = data.meta.date;
 						}
 						
-						results.push({
-							url: result.url,
-							title: meta.title || result.url.split('/').pop().replace(/-/g, ' '),
-							excerpt: result.excerpt || '',
-							subResults
+						let excerpt = '';
+						if (data.excerpt && data.excerpt.length > 0) {
+							excerpt = cleanText(data.excerpt);
+							excerpt = excerpt.substring(0, 180) + (excerpt.length > 180 ? '...' : '');
+						}
+						
+						urlMap.set(pageUrl, {
+							url: pageUrl,
+							title: pageTitle || 'Untitled',
+							date: pageDate,
+							excerpt: excerpt
 						});
 					}
+					
+					results.push(...urlMap.values());
 					
 					showResults(results);
 				} catch (err) {
@@ -264,44 +304,35 @@ const isDark = 'dark';
 				event?.stopPropagation();
 			};
 
+			const handleKeydown = (event) => {
+				if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+					event.preventDefault();
+					openModal();
+				}
+				if (event.key === 'Escape' && dialog.open) {
+					closeModal();
+				}
+			};
+
+			openBtn.removeAttribute('disabled');
 			openBtn.addEventListener('click', openModal);
-			openBtn.disabled = false;
 			closeBtn.addEventListener('click', closeModal);
-
-			dialog.addEventListener('close', () => {
-				document.body.toggleAttribute('data-search-modal-open', false);
-			});
-
-			input.addEventListener('input', handleInput);
-			input.addEventListener('keydown', (e) => {
-				if (e.key === 'Escape') {
+			dialog.addEventListener('click', (e) => {
+				if (e.target === dialog) {
 					closeModal();
 				}
 			});
-
+			input.addEventListener('input', handleInput);
 			clearBtn.addEventListener('click', () => {
 				input.value = '';
 				clearBtn.style.display = 'none';
 				resultsList.innerHTML = '';
-				empty.style.display = 'none';
 				resultsInfo.style.display = 'none';
 				input.focus();
 			});
+			document.addEventListener('keydown', handleKeydown);
 
-			window.addEventListener('keydown', (e) => {
-				if ((e.metaKey === true || e.ctrlKey === true) && e.key === 'k') {
-					e.preventDefault();
-					if (dialog.open) {
-						closeModal();
-					} else {
-						openModal();
-					}
-				}
-				
-				if (e.key === 'Escape' && dialog.open) {
-					closeModal();
-				}
-			});
+			this.addEventListener('keydown', handleKeydown);
 		}
 	}
 
@@ -310,51 +341,34 @@ const isDark = 'dark';
 
 <style>
 	site-search {
-		display: contents;
+		display: flex;
+		align-items: center;
 	}
 
-	button[data-open-modal] {
+	site-search > button {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		border: 0;
+		padding: 0.5rem 0.75rem;
 		background-color: transparent;
-		color: var(--text-muted);
+		border: 1px solid var(--border-color);
+		border-radius: 0.25rem;
+		color: var(--text-secondary);
+		font-size: 0.875rem;
 		cursor: pointer;
-		height: 2.5rem;
-		font-size: 1rem;
-		padding: 0 0.5rem;
+		transition: background-color 0.15s ease;
 	}
 
-	@media (min-width: 50rem) {
-		button[data-open-modal] {
-			border: 1px solid var(--border-color);
-			border-radius: 0.5rem;
-			padding-inline-start: 0.75rem;
-			padding-inline-end: 0.5rem;
-			background-color: var(--bg-primary);
-			color: var(--text-muted);
-			font-size: 0.875rem;
-			width: 100%;
-			max-width: 22rem;
-			transition: border-color 0.2s, color 0.2s;
-		}
-
-		button[data-open-modal]:hover {
-			border-color: var(--text-muted);
-			color: var(--text-primary);
-		}
-
-		button[data-open-modal] > :last-child {
-			margin-inline-start: auto;
-		}
+	site-search > button:hover {
+		background-color: var(--bg-secondary);
+		color: var(--text-primary);
 	}
 
 	.search-label {
 		display: none;
 	}
 
-	@media (min-width: 50rem) {
+	@media (min-width: 640px) {
 		.search-label {
 			display: inline;
 		}
@@ -362,112 +376,87 @@ const isDark = 'dark';
 
 	.search-shortcut {
 		display: flex;
-		gap: 0.25em;
+		align-items: center;
+		gap: 0.125rem;
+		margin-left: 0.25rem;
 	}
 
 	.search-shortcut kbd {
-		border-radius: 0.25rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.25rem;
+		height: 1.25rem;
+		padding: 0 0.25rem;
 		font-size: 0.625rem;
-		padding-inline: 0.375rem;
-		padding-block: 0.125rem;
-		background-color: var(--bg-tertiary);
 		font-family: ui-monospace, SFMono-Regular, monospace;
-		min-width: 1.125rem;
-		text-align: center;
+		background-color: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: 0.125rem;
 	}
 
 	dialog {
-		margin: 0;
+		width: 90vw;
+		max-width: 48rem;
+		border: none;
+		border-radius: 0.5rem;
 		background-color: var(--bg-primary);
-		border: 1px solid var(--border-color);
-		width: 100%;
-		max-width: 100%;
-		height: 100%;
-		max-height: 100%;
 		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 	}
 
-	dialog[open] {
-		display: flex;
-		animation: fadeIn 0.2s ease-out;
-	}
-
-	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-
 	dialog::backdrop {
-		background-color: rgba(0, 0, 0, 0.6);
-		-webkit-backdrop-filter: blur(4px);
-		backdrop-filter: blur(4px);
+		background-color: rgba(0, 0, 0, 0.5);
 	}
 
 	.dialog-frame {
-		position: relative;
-		overflow: auto;
 		display: flex;
 		flex-direction: column;
-		flex-grow: 1;
-		padding: 1rem;
+		height: 80vh;
 	}
 
-	button[data-close-modal] {
-		display: none;
-		position: absolute;
-		z-index: 1;
-		align-items: center;
+	.close-btn {
 		align-self: flex-end;
-		height: 44px;
-		padding: 0.25rem 0.75rem;
-		border: 0;
-		background: transparent;
+		padding: 0.5rem 0.75rem;
+		background-color: transparent;
+		border: none;
+		color: var(--text-muted);
+		font-size: 0.75rem;
 		cursor: pointer;
-		color: var(--accent);
-		font-size: 0.875rem;
+		transition: color 0.15s ease;
 	}
 
-	@media (max-width: 50rem) {
-		button[data-close-modal] {
-			display: flex;
-		}
+	.close-btn:hover {
+		color: var(--text-primary);
 	}
 
 	.search-container {
-		flex: 1;
 		display: flex;
 		flex-direction: column;
-		min-height: 0;
+		flex: 1;
+		padding: 0 1rem 1rem;
 	}
 
 	.search-form {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.5rem;
 		padding: 0.5rem 0.75rem;
-		border: 2px solid var(--border-color);
-		border-radius: 0.5rem;
-		background-color: var(--bg-primary);
-		transition: border-color 0.2s;
-	}
-
-	.search-form:focus-within {
-		border-color: var(--accent);
+		background-color: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: 0.25rem;
 	}
 
 	.search-icon {
 		color: var(--text-muted);
-		flex-shrink: 0;
 	}
 
 	.search-input {
 		flex: 1;
+		background-color: transparent;
 		border: none;
 		outline: none;
-		font-size: 1rem;
-		background: transparent;
 		color: var(--text-primary);
-		font-family: inherit;
+		font-size: 0.875rem;
 	}
 
 	.search-input::placeholder {
@@ -478,33 +467,36 @@ const isDark = 'dark';
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 28px;
-		height: 28px;
+		width: 1.5rem;
+		height: 1.5rem;
+		background-color: var(--accent);
 		border: none;
-		background: var(--accent);
+		border-radius: 50%;
 		color: white;
 		cursor: pointer;
-		border-radius: 50%;
-		transition: background-color 0.15s;
-		padding: 0;
+		transition: opacity 0.15s ease;
 	}
 
 	.search-clear:hover {
-		background-color: var(--accent-hover);
+		opacity: 0.8;
 	}
 
 	.results-info {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin: 0.5rem 0;
+		padding: 0.25rem 0;
 		font-size: 0.75rem;
 		color: var(--text-muted);
-		margin: 0.75rem 0 0.5rem;
-		font-family: ui-monospace, SFMono-Regular, monospace;
+		border-bottom: 1px solid var(--border-color);
 	}
 
 	.results-info mark {
-		background-color: rgba(251, 191, 36, 0.3);
-		color: var(--text-primary);
-		padding: 0 2px;
-		border-radius: 2px;
+		background-color: var(--accent);
+		color: white;
+		padding: 0 0.125rem;
+		border-radius: 0.125rem;
 	}
 
 	.search-results {
@@ -548,231 +540,66 @@ const isDark = 'dark';
 		color: var(--text-primary);
 	}
 
-	.results-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
+	.search-results .results-list {
+		list-style: none !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		display: flex !important;
+		flex-direction: column !important;
+		gap: 0.75rem !important;
 	}
 
-	.result-group {
-		display: flex;
-		flex-direction: column;
+	.search-results .search-result {
+		background-color: rgba(0, 0, 0, 0.05) !important;
+		border: 1px solid #e5e7eb !important;
+		border-radius: 0.5rem !important;
+		overflow: hidden !important;
 	}
 
-	.result-item {
-		display: flex;
-		align-items: flex-start;
-		padding: 0.75rem 0.875rem;
-		border-radius: 0.3125rem;
-		text-decoration: none;
-		color: inherit;
-		transition: background-color 0.15s;
-		position: relative;
+	.search-results .result-link {
+		display: block !important;
+		padding: 0.875rem !important;
+		text-decoration: none !important;
+		color: inherit !important;
+		transition: background-color 0.15s ease !important;
 	}
 
-	.result-item:hover {
-		background-color: var(--bg-secondary);
+	.search-results .result-link:hover {
+		background-color: rgba(0, 0, 0, 0.08) !important;
 	}
 
-	.result-main {
-		background-color: var(--bg-secondary);
+	.search-results .result-header {
+		display: flex !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		gap: 0.75rem !important;
 	}
 
-	.result-main:hover {
-		background-color: var(--bg-tertiary);
+	.search-results .result-title {
+		font-weight: 600 !important;
+		color: #1f2937 !important;
+		font-size: 0.9rem !important;
 	}
 
-	.page-icon {
-		width: 1.875rem;
-		height: 1.875rem;
-		background: var(--text-muted);
-		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M9 10h1a1 1 0 1 0 0-2H9a1 1 0 0 0 0 2Zm0 2a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2H9Zm11-3V8l-6-6a1 1 0 0 0-1 0H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V9Zm-6-4 3 3h-2a1 1 0 0 1-1-1V5Zm4 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5v3a3 3 0 0 0 3 3h3v9Zm-3-3H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2Z'/%3E%3C/svg%3E") center no-repeat;
-		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='currentColor' viewBox='0 0 24 24'%3E%3Cpath d='M9 10h1a1 1 0 1 0 0-2H9a1 1 0 0 0 0 2Zm0 2a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2H9Zm11-3V8l-6-6a1 1 0 0 0-1 0H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V9Zm-6-4 3 3h-2a1 1 0 0 1-1-1V5Zm4 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5v3a3 3 0 0 0 3 3h3v9Zm-3-3H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2Z'/%3E%3C/svg%3E") center no-repeat;
-		flex-shrink: 0;
-		margin-right: 0.75rem;
+	.search-results .result-date {
+		font-size: 0.7rem !important;
+		color: #9ca3af !important;
+		font-family: ui-monospace, SFMono-Regular, monospace !important;
+		white-space: nowrap !important;
 	}
 
-	.result-content {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-width: 0;
+	.search-results .result-excerpt {
+		margin: 0.75rem 0 0 1.75rem !important;
+		padding: 0 !important;
+		font-size: 0.8rem !important;
+		color: #6b7280 !important;
+		line-height: 1.6 !important;
 	}
 
-	.result-title {
-		font-size: 0.9375rem;
-		font-weight: 600;
-		color: var(--text-primary);
-		line-height: 1.4;
-	}
-
-	.result-excerpt {
-		font-size: 0.8125rem;
-		color: var(--text-secondary);
-		line-height: 1.5;
-		margin-top: 0.25rem;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
-	.result-path {
-		font-size: 0.75rem;
-		color: var(--text-muted);
-		font-family: ui-monospace, SFMono-Regular, monospace;
-		margin-top: 0.25rem;
-	}
-
-	.result-nested {
-		padding-left: 3.75rem;
-		padding-right: 0.875rem;
-		background-color: transparent;
-	}
-
-	.result-nested:hover {
-		background-color: var(--bg-secondary);
-	}
-
-	.tree-line,
-	.tree-corner {
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 0.125rem;
-		background-color: var(--border-color);
-	}
-
-	.tree-corner {
-		width: 1rem;
-		height: 0.125rem;
-		background-color: var(--border-color);
-		top: 1rem;
-	}
-
-	.result-nested:last-child .tree-line {
-		height: 1rem;
-	}
-
-	.result-item mark {
-		background-color: rgba(251, 191, 36, 0.4);
-		color: var(--text-primary);
-		padding: 0 2px;
-		border-radius: 2px;
-	}
-
-	@media (min-width: 50rem) {
-		dialog {
-			margin: 4rem auto auto;
-			border-radius: 0.5rem;
-			width: 90%;
-			max-width: 40rem;
-			height: max-content;
-			min-height: 15rem;
-			max-height: calc(100% - 8rem);
-			animation: slideIn 0.2s ease-out;
-		}
-
-		@keyframes slideIn {
-			from {
-				opacity: 0;
-				transform: translateY(-10px) scale(0.98);
-			}
-			to {
-				opacity: 1;
-				transform: translateY(0) scale(1);
-			}
-		}
-
-		.dialog-frame {
-			padding: 1.5rem;
-		}
-	}
-
-	[data-search-modal-open] {
-		overflow: hidden;
-	}
-
-	html.dark .search-shortcut kbd {
-		background-color: var(--bg-tertiary);
-	}
-
-	html.dark .search-form {
-		background-color: var(--bg-secondary);
-	}
-
-	html.dark .search-icon {
-		color: var(--text-muted);
-	}
-
-	html.dark .search-input {
-		color: var(--text-primary);
-	}
-
-	html.dark .search-input::placeholder {
-		color: var(--text-muted);
-	}
-
-	html.dark .results-info mark {
-		background-color: rgba(251, 191, 36, 0.3);
-		color: var(--text-primary);
-	}
-
-	html.dark .search-loading,
-	html.dark .search-empty,
-	html.dark .search-error {
-		color: var(--text-muted);
-	}
-
-	html.dark .search-empty .search-term {
-		color: var(--text-primary);
-	}
-
-	html.dark .spinner {
-		border-color: var(--border-color);
-		border-top-color: var(--accent);
-	}
-
-	html.dark .result-main {
-		background-color: var(--bg-secondary);
-	}
-
-	html.dark .result-main:hover {
-		background-color: var(--bg-tertiary);
-	}
-
-	html.dark .result-item:hover {
-		background-color: var(--bg-secondary);
-	}
-
-	html.dark .result-nested:hover {
-		background-color: var(--bg-secondary);
-	}
-
-	html.dark .result-title {
-		color: var(--text-primary);
-	}
-
-	html.dark .result-excerpt {
-		color: var(--text-secondary);
-	}
-
-	html.dark .result-path {
-		color: var(--text-muted);
-	}
-
-	html.dark .page-icon {
-		background: var(--text-muted);
-	}
-
-	html.dark .tree-line,
-	html.dark .tree-corner {
-		background-color: var(--border-color);
-	}
-
-	html.dark .result-item mark {
-		background-color: rgba(251, 191, 36, 0.3);
-		color: var(--text-primary);
+	.search-results .result-excerpt mark {
+		background-color: #3b82f6 !important;
+		color: white !important;
+		padding: 0 0.125rem !important;
+		border-radius: 0.125rem !important;
 	}
 </style>
