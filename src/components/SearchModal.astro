@@ -79,56 +79,55 @@ const isDark = 'dark';
 </script>
 
 <script>
+	declare global {
+		interface Window {
+			Pagefind: any;
+		}
+	}
+	
 	class SiteSearch extends HTMLElement {
 		constructor() {
 			super();
-			const openBtn = this.querySelector('button[data-open-modal]');
-			const closeBtn = this.querySelector('button[data-close-modal]');
-			const dialog = this.querySelector('dialog');
-			const input = this.querySelector('.search-input');
-			const clearBtn = this.querySelector('.search-clear');
-			const resultsList = this.querySelector('.results-list');
-			const loading = this.querySelector('.search-loading');
-			const empty = this.querySelector('.search-empty');
-			const error = this.querySelector('.search-error');
-			const resultsInfo = this.querySelector('.results-info');
-			const resultsCount = this.querySelector('.results-info .results-count');
+			const openBtn = this.querySelector('button[data-open-modal]') as HTMLButtonElement;
+			const closeBtn = this.querySelector('button[data-close-modal]') as HTMLButtonElement;
+			const dialog = this.querySelector('dialog') as HTMLDialogElement;
+			const input = this.querySelector('.search-input') as HTMLInputElement;
+			const clearBtn = this.querySelector('.search-clear') as HTMLButtonElement;
+			const resultsList = this.querySelector('.results-list') as HTMLUListElement;
+			const loading = this.querySelector('.search-loading') as HTMLDivElement;
+			const empty = this.querySelector('.search-empty') as HTMLDivElement;
+			const error = this.querySelector('.search-error') as HTMLDivElement;
+			const resultsInfo = this.querySelector('.results-info') as HTMLDivElement;
+			const resultsCount = this.querySelector('.results-info .results-count') as HTMLSpanElement;
 			const searchTermElements = this.querySelectorAll('.search-term');
 
-			let searchTimeout = null;
-			let pagefindLoaded = false;
-			let pagefindLoading = false;
-
+			let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+			let pagefindLoadFailed = false;
+			
 			const loadPagefind = async () => {
 				if (window.Pagefind) {
-					pagefindLoaded = true;
-					return;
-				}
-				if (pagefindLoading) {
-					let attempts = 0;
-					while (!window.Pagefind && attempts < 20) {
-						await new Promise(r => setTimeout(r, 100));
-						attempts++;
-					}
-					if (window.Pagefind) {
-						pagefindLoaded = true;
-					}
 					return;
 				}
 				
-				pagefindLoading = true;
+				if (pagefindLoadFailed) {
+					return;
+				}
 				
 				try {
-					const module = await import('/pagefind/pagefind.js');
-					window.Pagefind = {
-						search: module.search,
-						debouncedSearch: module.debouncedSearch,
-						init: module.init
-					};
-					pagefindLoaded = true;
+					const pagefindScript = document.createElement('script');
+					pagefindScript.src = '/pagefind/pagefind.js';
+					pagefindScript.type = 'module';
+					
+					await new Promise((resolve, reject) => {
+						pagefindScript.onload = resolve;
+						pagefindScript.onerror = reject;
+						document.head.appendChild(pagefindScript);
+					});
+					
+					await new Promise(resolve => setTimeout(resolve, 100));
 				} catch (err) {
-					console.error('Failed to load Pagefind:', err);
-					pagefindLoading = false;
+					console.warn('Pagefind is not available in development mode. Run "npm run build" to enable search.');
+					pagefindLoadFailed = true;
 				}
 			};
 
