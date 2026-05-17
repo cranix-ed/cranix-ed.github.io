@@ -117,19 +117,17 @@ const isDark = 'dark';
 				}
 				
 				try {
-					const pagefindScript = document.createElement('script');
-					pagefindScript.src = '/pagefind/pagefind.js';
-					pagefindScript.type = 'module';
+					const module = await import(/* @vite-ignore */ '/pagefind/pagefind.js');
 					
-					await new Promise((resolve, reject) => {
-						pagefindScript.onload = resolve;
-						pagefindScript.onerror = reject;
-						document.head.appendChild(pagefindScript);
-					});
+					if (module && typeof module.init === 'function') {
+						await module.init();
+					}
 					
-					await new Promise(resolve => setTimeout(resolve, 100));
+					if (!window.Pagefind) {
+						throw new Error('Pagefind initialization failed');
+					}
 				} catch (err) {
-					console.warn('Pagefind is not available in development mode. Run "npm run build" to enable search.');
+					console.error('Failed to load Pagefind:', err);
 					pagefindLoadFailed = true;
 				}
 			};
