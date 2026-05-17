@@ -274,6 +274,7 @@ const isDark = 'dark';
 
 					const search = await window.Pagefind.search(query);
 					const results = [];
+					const queryLower = query.toLowerCase();
 					
 					const urlMap = new Map();
 					
@@ -298,6 +299,13 @@ const isDark = 'dark';
 							excerpt = cleanText(data.excerpt);
 							excerpt = excerpt.substring(0, 180) + (excerpt.length > 180 ? '...' : '');
 						}
+						
+						// 只保留标题或摘要中确实包含关键词的文章
+						const titleLower = pageTitle.toLowerCase();
+						const excerptLower = excerpt.toLowerCase();
+						const hasMatch = titleLower.includes(queryLower) || excerptLower.includes(queryLower);
+						
+						if (!hasMatch) continue;
 						
 						urlMap.set(pageUrl, {
 							url: pageUrl,
