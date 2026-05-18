@@ -76,12 +76,6 @@ const isDark = 'dark';
 </script>
 
 <script>
-	declare global {
-		interface Window {
-			Pagefind: any;
-		}
-	}
-	
 	class SiteSearch extends HTMLElement {
 		constructor() {
 			super();
@@ -98,25 +92,7 @@ const isDark = 'dark';
 			const searchTermElements = this.querySelectorAll('.search-term');
 
 			let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-			let pagefindLoadFailed = false;
-			
-			const loadPagefind = async () => {
-				try {
-					const pagefindUrl = new URL('/pagefind/pagefind.js', window.location.origin).href;
-					console.log('Loading Pagefind from:', pagefindUrl);
-					await import(/* @vite-ignore */ pagefindUrl);
-					
-					if (!window.Pagefind) {
-						throw new Error('Pagefind not available on window');
-					}
-					
-					console.log('Pagefind loaded successfully');
-					return window.Pagefind;
-				} catch (err) {
-					console.error('Failed to load Pagefind:', err);
-					return null;
-				}
-			};
+			let pagefind: any = null;
 
 			const closeModal = () => {
 				if (dialog.open) {
@@ -139,7 +115,7 @@ const isDark = 'dark';
 				resultsList.innerHTML = '';
 			};
 
-			const showResults = (results) => {
+			const showResults = (results: Array<{ url: string; title: string; date: string; excerpt: string }>) => {
 				loading.style.display = 'none';
 				error.style.display = 'none';
 				
@@ -151,7 +127,7 @@ const isDark = 'dark';
 					return;
 				}
 
-				resultsCount.textContent = results.length;
+				resultsCount.textContent = results.length.toString();
 				searchTermElements.forEach(el => el.textContent = input.value);
 				resultsInfo.style.display = 'block';
 				empty.style.display = 'none';
@@ -166,40 +142,35 @@ const isDark = 'dark';
 				resultsList.innerHTML = '';
 			};
 
-			const highlightText = (text, query) => {
+			const highlightText = (text: string, query: string): string => {
 				if (!text || !query) return text;
 				const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 				const regex = new RegExp(`(${escaped})`, 'gi');
 				return text.replace(regex, '<mark>$1</mark>');
 			};
 
-			const cleanText = (text) => {
+			const cleanText = (text: string): string => {
 				if (!text) return '';
 				let clean = text.replace(/<[^>]*>/g, '');
 				clean = clean.replace(/\s+/g, ' ').trim();
 				return clean;
 			};
 
-			this.renderResults = (results) => {
+			this.renderResults = (results: Array<{ url: string; title: string; date: string; excerpt: string }>) => {
 				return results.map(result => {
 					const query = input.value.toLowerCase();
 					let title = result.title;
 					if (title.toLowerCase().includes(query)) {
 						title = highlightText(result.title, input.value);
-					} else {
-						title = result.title;
 					}
 					
-					const date = result.date || '';
 					let excerpt = result.excerpt || '';
-					if (excerpt) {
-						if (excerpt.toLowerCase().includes(query)) {
-							excerpt = highlightText(excerpt, input.value);
-						}
+					if (excerpt && excerpt.toLowerCase().includes(query)) {
+						excerpt = highlightText(excerpt, input.value);
 					}
 					
 					return `
-						<li style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; overflow: hidden; margin-bottom: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s ease;">
+						<li style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.75rem; overflow: hidden; margin-bottom: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
 							<a href="${result.url}" style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem 1.25rem; text-decoration: none; color: inherit;">
 								<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -211,7 +182,7 @@ const isDark = 'dark';
 								<div style="flex: 1; min-width: 0;">
 									<div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
 										<span style="font-weight: 600; color: var(--text-primary); font-size: 0.9375rem;">${title}</span>
-										${date ? `<span style="font-size: 0.7rem; color: var(--text-muted); font-family: ui-monospace, monospace; white-space: nowrap; background: var(--bg-tertiary); padding: 0.2rem 0.4rem; border-radius: 0.25rem;">${date}</span>` : ''}
+										${result.date ? `<span style="font-size: 0.7rem; color: var(--text-muted); font-family: ui-monospace, monospace; white-space: nowrap; background: var(--bg-tertiary); padding: 0.2rem 0.4rem; border-radius: 0.25rem;">${result.date}</span>` : ''}
 									</div>
 									${excerpt ? `<div style="margin-top: 0.5rem; font-size: 0.825rem; color: var(--text-muted); line-height: 1.6; border-left: 3px solid var(--border-color); padding-left: 0.75rem;">${excerpt}</div>` : ''}
 								</div>
@@ -221,7 +192,25 @@ const isDark = 'dark';
 				}).join('');
 			};
 
-			const performSearch = async (query) => {
+			const loadPagefindModule = async (): Promise<any> => {
+				try {
+					if (pagefind) return pagefind;
+					
+					const pagefindUrl = new URL('/pagefind/pagefind.js', window.location.origin).href;
+					console.log('Loading Pagefind from:', pagefindUrl);
+					
+					const pagefindModule = await import(/* @vite-ignore */ pagefindUrl);
+					pagefind = pagefindModule.default || pagefindModule;
+					
+					console.log('Pagefind module loaded successfully');
+					return pagefind;
+				} catch (err) {
+					console.error('Failed to load Pagefind:', err);
+					return null;
+				}
+			};
+
+			const performSearch = async (query: string) => {
 				if (!query.trim()) {
 					resultsList.innerHTML = '';
 					loading.style.display = 'none';
@@ -234,78 +223,83 @@ const isDark = 'dark';
 				showLoading();
 
 				try {
-					console.log('Current URL:', window.location.href);
-					
-					if (!window.Pagefind) {
-						await loadPagefind();
+					const pf = await loadPagefindModule();
+					if (!pf) {
+						throw new Error('Pagefind not available');
 					}
-					
-					if (!window.Pagefind) {
-						pagefindLoadFailed = true;
-						throw new Error('Pagefind failed to load');
-					}
-					
-					console.log('Pagefind loaded:', !!window.Pagefind);
+
+					const searchResult = await pf.search(query, { languages: ['en', 'zh-cn'] });
 					console.log('Searching for:', query);
+					console.log('Total Pagefind results:', searchResult.results.length);
 					
-					const searchResult = await window.Pagefind.search(query);
-					
-					console.log('Pagefind results:', searchResult.results.length);
-					
-					const results = [];
-					const urlMap = new Map();
-					
-					const queryLower = query.toLowerCase();
-					
+					const results: Array<{ url: string; title: string; date: string; excerpt: string }> = [];
+					const seenUrls = new Set<string>();
+					console.log('Starting result processing...');
+
 					for (const result of searchResult.results) {
 						const data = await result.data();
-						const pageUrl = data.url || '/';
-						
-						if (urlMap.has(pageUrl)) continue;
-						
-						if (!pageUrl.startsWith('/blog/')) continue;
-						
-						if (pageUrl === '/blog/' || pageUrl === '/blog/index.html') continue;
-						
-						let pageTitle = data.meta?.title || '';
-						if (!pageTitle) {
-							const urlParts = pageUrl.split('/').filter(p => p && p !== 'index.html' && p !== 'index');
-							pageTitle = urlParts[urlParts.length - 1] || 'Untitled';
-							pageTitle = pageTitle.replace(/-/g, ' ').replace(/\.html?$/i, '').trim();
+						let url = data.url || '';
+						console.log('Result URL:', url);
+						console.log('Result title:', data.meta?.title);
+
+						if (url.endsWith('/index.html')) {
+							url = url.replace(/\/index\.html$/, '/');
 						}
 						
-						if (!pageTitle.toLowerCase().includes(queryLower)) {
+						if (!url.startsWith('/blog/')) {
+							console.log('Skipping non-blog URL:', url);
 							continue;
 						}
 						
-						let pageDate = '';
+						if (url === '/blog/' || url === '/blog') {
+							console.log('Skipping blog index:', url);
+							continue;
+						}
+						
+						const postPath = url.replace(/^\/blog\//, '').replace(/\/$/, '');
+						if (!postPath || postPath.length < 2) {
+							console.log('Skipping invalid blog post:', url);
+							continue;
+						}
+						
+						const canonicalUrl = url.replace(/\/$/, '');
+						if (seenUrls.has(canonicalUrl)) {
+							console.log('Skipping duplicate:', url);
+							continue;
+						}
+						seenUrls.add(canonicalUrl);
+						console.log('Adding blog post:', canonicalUrl);
+
+						let title = data.meta?.title || '';
+						if (!title) {
+							const urlParts = url.split('/').filter(p => p && p !== 'index.html' && p !== 'index');
+							title = urlParts[urlParts.length - 1] || 'Untitled';
+							title = title.replace(/-/g, ' ').replace(/\.html?$/i, '').trim();
+						}
+
+						let date = '';
 						if (data.meta?.date) {
 							try {
-								const date = new Date(data.meta.date);
-								pageDate = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+								date = new Date(data.meta.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 							} catch {
-								pageDate = data.meta.date;
+								date = data.meta.date;
 							}
 						}
-						
+
 						let excerpt = '';
-						if (data.excerpt && data.excerpt.length > 0) {
+						if (data.excerpt) {
 							excerpt = cleanText(data.excerpt);
 							excerpt = excerpt.substring(0, 180) + (excerpt.length > 180 ? '...' : '');
+						} else if (data.content) {
+							excerpt = cleanText(data.content);
+							excerpt = excerpt.substring(0, 180) + (excerpt.length > 180 ? '...' : '');
 						}
-						
-						urlMap.set(pageUrl, {
-							url: pageUrl,
-							title: pageTitle || 'Untitled',
-							date: pageDate,
-							excerpt: excerpt
-						});
+
+						results.push({ url: canonicalUrl, title, date, excerpt });
+						console.log('Added result:', { url: canonicalUrl, title });
 					}
-					
-					results.push(...urlMap.values());
-					
-					console.log('Filtered results:', results.length);
-					
+
+					console.log('Filtered results count:', results.length);
 					showResults(results);
 				} catch (err) {
 					console.error('Search error:', err);
@@ -322,14 +316,14 @@ const isDark = 'dark';
 				}, 150);
 			};
 
-			const openModal = (event) => {
+			const openModal = (event?: Event) => {
 				dialog.showModal();
 				document.body.toggleAttribute('data-search-modal-open', true);
 				input.focus();
 				event?.stopPropagation();
 			};
 
-			const handleKeydown = (event) => {
+			const handleKeydown = (event: KeyboardEvent) => {
 				if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
 					event.preventDefault();
 					openModal();
@@ -355,7 +349,6 @@ const isDark = 'dark';
 				input.focus();
 			});
 			document.addEventListener('keydown', handleKeydown);
-
 			this.addEventListener('keydown', handleKeydown);
 		}
 	}
