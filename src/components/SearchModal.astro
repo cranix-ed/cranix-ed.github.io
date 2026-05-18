@@ -251,12 +251,13 @@ const isDark = 'dark';
 							continue;
 						}
 						
-						if (url === '/blog/' || url === '/blog') {
+						const cleanUrl = url.replace(/\/index\.html$/i, '/').replace(/\.html$/i, '');
+						if (cleanUrl === '/blog/' || cleanUrl === '/blog') {
 							console.log('Skipping blog index:', url);
 							continue;
 						}
 						
-						const postPath = url.replace(/^\/blog\//, '').replace(/\/$/, '');
+						const postPath = cleanUrl.replace(/^\/blog\//, '').replace(/\/$/, '');
 						if (!postPath || postPath.length < 2) {
 							console.log('Skipping invalid blog post:', url);
 							continue;
