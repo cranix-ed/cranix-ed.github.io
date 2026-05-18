@@ -1,62 +1,47 @@
 ---
 title: Introducing Zen Theme
-description: A clean, modern theme inspired by Zen Browser's documentation design with excellent readability and beautiful typography.
+description: A clean, modern Astro blog theme with excellent readability and beautiful typography.
 pubDate: 2026-05-14
 tags: ["theme", "design", "zen", "astro", "blog"]
 ---
 
-## Quick Installation
+## Quick Start
+
+Zen Theme is a clean and modern Astro blog theme with excellent readability and beautiful typography.
+
+### Download
+
+GitHub: [https://github.com/Secd0g/zen](https://github.com/Secd0g/zen)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/Secd0g/zen.git
+
+# Navigate to the project directory
+cd zen
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+### Build for Production
+
+```bash
+npm run build
+```
 
 ### Prerequisites
-- Node.js (v18 or higher)
+- Node.js (v22.12.0 or higher)
 - npm or yarn package manager
-
-### Step 1: Initialize Project
-
-```bash
-npm create astro@6.5.0 . -- --template blog
-```
-
-### Step 2: Install Dependencies
-
-```bash
-npm install
-```
-
-### Step 3: Add Inter Font
-
-Add the Inter font to your HTML head:
-
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-```
-
-### Step 4: Apply Theme Styles
-
-Copy the theme CSS variables to your stylesheet:
-
-```css
-:root {
-  --accent: #F97316;
-  --accent-hover: #EA580C;
-  --accent-light: #FDBA74;
-  --text-primary: #18181B;
-  --text-secondary: #3F3F46;
-  --text-muted: #71717A;
-  --text-faint: #A1A1AA;
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #FAFAFA;
-  --bg-tertiary: #F5F5F5;
-  --border-color: #E4E4E7;
-  --body-font-size: 17px;
-}
-```
 
 ## Overview
 
-The Zen theme is a clean, modern design theme inspired by the Zen Browser documentation website. It features a minimalistic approach with warm orange accents, excellent readability, and thoughtful typography choices.
+The Zen theme is a clean, modern design theme featuring a minimalistic approach with warm orange accents, excellent readability, and thoughtful typography choices.
 
 ## Key Features
 

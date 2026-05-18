@@ -1,13 +1,13 @@
-# Zen Theme Blog
+# Zen Theme
 
-A clean, modern blog theme with excellent readability and beautiful typography. Built with Astro for optimal performance.
+A clean, modern Astro blog theme with excellent readability and beautiful typography.
 
 ## Features
 
-- 🎨 **Zen Theme**: Clean design inspired by Zen Browser documentation
+- 🎨 **Clean Design**: Minimalistic design with warm orange accents
 - 🔤 **Inter Font**: Optimal readability with Inter typeface
 - 🎯 **Responsive Design**: Fully responsive for mobile and desktop
-- 🌙 **Dark Mode**: Automatic theme switching based on user preference
+- 🌙 **Dark Mode**: Automatic theme switching based on time and user preference
 - 🔍 **Search**: Built-in search functionality with Pagefind
 - 📝 **Markdown Support**: Full markdown support
 - 📊 **Beautiful Tables**: Styled tables with hover effects
@@ -26,7 +26,7 @@ A clean, modern blog theme with excellent readability and beautiful typography. 
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
+- Node.js (v22.12.0 or higher)
 - npm or yarn package manager
 
 ### Installation
