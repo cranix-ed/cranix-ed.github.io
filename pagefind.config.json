@@ -12,12 +12,12 @@
   "include": [
     "**/*.html"
   ],
-  "force_language": "zh",
   "indexes": {
     "pages": {
       "meta": [
         "title",
-        "description"
+        "description",
+        "date"
       ]
     }
   },
