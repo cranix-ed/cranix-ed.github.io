@@ -76,6 +76,29 @@ const isDark = 'dark';
 </script>
 
 <script>
+	let pagefindModule = null;
+	let pagefindLoading = false;
+
+	const preloadPagefind = async () => {
+		if (pagefindModule || pagefindLoading) return;
+		pagefindLoading = true;
+		try {
+			const pagefindUrl = new URL('/pagefind/pagefind.js', window.location.origin).href;
+			const module = await import(/* @vite-ignore */ pagefindUrl);
+			pagefindModule = module.default || module;
+		} catch {
+			pagefindModule = null;
+		} finally {
+			pagefindLoading = false;
+		}
+	};
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', preloadPagefind);
+	} else {
+		preloadPagefind();
+	}
+
 	class SiteSearch extends HTMLElement {
 		constructor() {
 			super();
@@ -92,7 +115,6 @@ const isDark = 'dark';
 			const searchTermElements = this.querySelectorAll('.search-term');
 
 			let searchTimeout: ReturnType<typeof setTimeout> | null = null;
-			let pagefind: any = null;
 
 			const closeModal = () => {
 				if (dialog.open) {
@@ -131,7 +153,7 @@ const isDark = 'dark';
 				searchTermElements.forEach(el => el.textContent = input.value);
 				resultsInfo.style.display = 'block';
 				empty.style.display = 'none';
-				resultsList.innerHTML = this.renderResults(results);
+				resultsList.innerHTML = this.renderResults(results, input.value.toLowerCase());
 			};
 
 			const showError = () => {
@@ -156,8 +178,7 @@ const isDark = 'dark';
 				return clean;
 			};
 
-			this.renderResults = (results: Array<{ url: string; title: string; date: string; excerpt: string }>) => {
-				const query = input.value.toLowerCase();
+			this.renderResults = (results: Array<{ url: string; title: string; date: string; excerpt: string }>, query: string) => {
 				return results.map(result => {
 					let title = result.title;
 					if (title.toLowerCase().includes(query)) {
@@ -192,21 +213,6 @@ const isDark = 'dark';
 				}).join('');
 			};
 
-			const loadPagefindModule = async (): Promise<any> => {
-				try {
-					if (pagefind) return pagefind;
-					
-					const pagefindUrl = new URL('/pagefind/pagefind.js', window.location.origin).href;
-					
-					const pagefindModule = await import(/* @vite-ignore */ pagefindUrl);
-					pagefind = pagefindModule.default || pagefindModule;
-					
-					return pagefind;
-				} catch {
-					return null;
-				}
-			};
-
 			const performSearch = async (query: string) => {
 				if (!query.trim()) {
 					resultsList.innerHTML = '';
@@ -220,18 +226,20 @@ const isDark = 'dark';
 				showLoading();
 
 				try {
-					const pf = await loadPagefindModule();
-					if (!pf) {
+					if (!pagefindModule) {
+						await preloadPagefind();
+					}
+					
+					if (!pagefindModule) {
 						throw new Error('Pagefind not available');
 					}
 
-					const searchResult = await pf.search(query, { languages: ['en', 'zh-cn'] });
+					const searchResult = await pagefindModule.search(query, { languages: ['en', 'zh-cn'] });
 					
-					const results: Array<{ url: string; title: string; date: string; excerpt: string }> = [];
 					const seenUrls = new Set<string>();
 					const lowerQuery = query.toLowerCase();
 
-					for (const result of searchResult.results) {
+					const processResult = async (result: any) => {
 						const data = await result.data();
 						let url = data.url || '';
 
@@ -240,22 +248,22 @@ const isDark = 'dark';
 						}
 						
 						if (!url.startsWith('/blog/')) {
-							continue;
+							return null;
 						}
 						
 						const cleanUrl = url.replace(/\/index\.html$/i, '/').replace(/\.html$/i, '');
 						if (cleanUrl === '/blog/' || cleanUrl === '/blog') {
-							continue;
+							return null;
 						}
 						
 						const postPath = cleanUrl.replace(/^\/blog\//, '').replace(/\/$/, '');
 						if (!postPath || postPath.length < 2) {
-							continue;
+							return null;
 						}
 						
 						const canonicalUrl = url.replace(/\/$/, '');
 						if (seenUrls.has(canonicalUrl)) {
-							continue;
+							return null;
 						}
 						seenUrls.add(canonicalUrl);
 
@@ -287,13 +295,16 @@ const isDark = 'dark';
 						               (data.content && cleanText(data.content).toLowerCase().includes(lowerQuery));
 
 						if (!hasMatch) {
-							continue;
+							return null;
 						}
 
 						excerpt = excerpt.substring(0, 180) + (excerpt.length > 180 ? '...' : '');
 
-						results.push({ url: canonicalUrl, title, date, excerpt });
-					}
+						return { url: canonicalUrl, title, date, excerpt };
+					};
+
+					const promises = searchResult.results.map(processResult);
+					const results = (await Promise.all(promises)).filter(Boolean);
 
 					showResults(results);
 				} catch {
@@ -307,7 +318,7 @@ const isDark = 'dark';
 				if (searchTimeout) clearTimeout(searchTimeout);
 				searchTimeout = setTimeout(() => {
 					performSearch(input.value);
-				}, 150);
+				}, 250);
 			};
 
 			const openModal = (event?: Event) => {
