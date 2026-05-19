@@ -157,8 +157,8 @@ const isDark = 'dark';
 			};
 
 			this.renderResults = (results: Array<{ url: string; title: string; date: string; excerpt: string }>) => {
+				const query = input.value.toLowerCase();
 				return results.map(result => {
-					const query = input.value.toLowerCase();
 					let title = result.title;
 					if (title.toLowerCase().includes(query)) {
 						title = highlightText(result.title, input.value);
@@ -197,15 +197,12 @@ const isDark = 'dark';
 					if (pagefind) return pagefind;
 					
 					const pagefindUrl = new URL('/pagefind/pagefind.js', window.location.origin).href;
-					console.log('Loading Pagefind from:', pagefindUrl);
 					
 					const pagefindModule = await import(/* @vite-ignore */ pagefindUrl);
 					pagefind = pagefindModule.default || pagefindModule;
 					
-					console.log('Pagefind module loaded successfully');
 					return pagefind;
-				} catch (err) {
-					console.error('Failed to load Pagefind:', err);
+				} catch {
 					return null;
 				}
 			};
@@ -229,47 +226,38 @@ const isDark = 'dark';
 					}
 
 					const searchResult = await pf.search(query, { languages: ['en', 'zh-cn'] });
-					console.log('Searching for:', query);
-					console.log('Total Pagefind results:', searchResult.results.length);
 					
 					const results: Array<{ url: string; title: string; date: string; excerpt: string }> = [];
 					const seenUrls = new Set<string>();
-					console.log('Starting result processing...');
+					const lowerQuery = query.toLowerCase();
 
 					for (const result of searchResult.results) {
 						const data = await result.data();
 						let url = data.url || '';
-						console.log('Result URL:', url);
-						console.log('Result title:', data.meta?.title);
 
 						if (url.endsWith('/index.html')) {
 							url = url.replace(/\/index\.html$/, '/');
 						}
 						
 						if (!url.startsWith('/blog/')) {
-							console.log('Skipping non-blog URL:', url);
 							continue;
 						}
 						
 						const cleanUrl = url.replace(/\/index\.html$/i, '/').replace(/\.html$/i, '');
 						if (cleanUrl === '/blog/' || cleanUrl === '/blog') {
-							console.log('Skipping blog index:', url);
 							continue;
 						}
 						
 						const postPath = cleanUrl.replace(/^\/blog\//, '').replace(/\/$/, '');
 						if (!postPath || postPath.length < 2) {
-							console.log('Skipping invalid blog post:', url);
 							continue;
 						}
 						
 						const canonicalUrl = url.replace(/\/$/, '');
 						if (seenUrls.has(canonicalUrl)) {
-							console.log('Skipping duplicate:', url);
 							continue;
 						}
 						seenUrls.add(canonicalUrl);
-						console.log('Adding blog post:', canonicalUrl);
 
 						let title = data.meta?.title || '';
 						if (!title) {
@@ -290,20 +278,25 @@ const isDark = 'dark';
 						let excerpt = '';
 						if (data.excerpt) {
 							excerpt = cleanText(data.excerpt);
-							excerpt = excerpt.substring(0, 180) + (excerpt.length > 180 ? '...' : '');
 						} else if (data.content) {
 							excerpt = cleanText(data.content);
-							excerpt = excerpt.substring(0, 180) + (excerpt.length > 180 ? '...' : '');
 						}
 
+						const hasMatch = title.toLowerCase().includes(lowerQuery) || 
+						               excerpt.toLowerCase().includes(lowerQuery) ||
+						               (data.content && cleanText(data.content).toLowerCase().includes(lowerQuery));
+
+						if (!hasMatch) {
+							continue;
+						}
+
+						excerpt = excerpt.substring(0, 180) + (excerpt.length > 180 ? '...' : '');
+
 						results.push({ url: canonicalUrl, title, date, excerpt });
-						console.log('Added result:', { url: canonicalUrl, title });
 					}
 
-					console.log('Filtered results count:', results.length);
 					showResults(results);
-				} catch (err) {
-					console.error('Search error:', err);
+				} catch {
 					showError();
 				}
 			};
@@ -550,6 +543,25 @@ const isDark = 'dark';
 		flex: 1;
 		overflow-y: auto;
 		padding: 0.75rem;
+		max-height: 400px;
+	}
+
+	.search-results::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.search-results::-webkit-scrollbar-track {
+		background: var(--bg-secondary);
+		border-radius: 3px;
+	}
+
+	.search-results::-webkit-scrollbar-thumb {
+		background: var(--text-muted);
+		border-radius: 3px;
+	}
+
+	.search-results::-webkit-scrollbar-thumb:hover {
+		background: var(--text-secondary);
 	}
 
 	.search-results .results-list {
