@@ -4,6 +4,7 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import expressiveCode from 'astro-expressive-code';
 import { defineConfig, fontProviders } from 'astro/config';
+import rehypeWrapTables from './src/plugins/rehype-wrap-tables';
 
 export default defineConfig({
 	site: 'https://example.com',
@@ -41,7 +42,9 @@ export default defineConfig({
 		mdx(),
 		sitemap(),
 	],
-	markdown: {},
+	markdown: {
+		rehypePlugins: [rehypeWrapTables],
+	},
 	fonts: [
 		{
 			provider: fontProviders.local(),

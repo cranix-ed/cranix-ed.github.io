@@ -104,14 +104,19 @@ ul, ol {
 	line-height: 2.0;
 }
 
+.table-wrapper {
+	overflow-x: auto;
+	margin: 1.75rem 0;
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
 table {
 	width: 100%;
-	margin: 1.75rem 0;
 	border-collapse: collapse;
 	font-size: 0.9375rem;
 	border-radius: 12px;
 	overflow: hidden;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 	border: 1px solid var(--border-color);
 }
 
@@ -128,9 +133,6 @@ th {
 	color: var(--text-primary);
 	background-color: var(--bg-secondary);
 	white-space: nowrap;
-	position: sticky;
-	top: 0;
-	z-index: 1;
 }
 
 td {
