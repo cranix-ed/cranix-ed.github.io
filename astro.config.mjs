@@ -1,19 +1,17 @@
 // @ts-check
 
-import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import expressiveCode from 'astro-expressive-code';
 import { defineConfig, fontProviders } from 'astro/config';
 import rehypeWrapTables from './src/plugins/rehype-wrap-tables';
 
 export default defineConfig({
-	site: 'https://example.com',
+	site: 'https://zenblog.d2316144.workers.dev',
 	vite: {},
 	integrations: [
 		expressiveCode({
 			themes: ['github-light', 'github-dark'],
 			defaultProps: {
-				theme: 'auto',
 				wrap: true,
 				showLineNumbers: true,
 			},
@@ -39,11 +37,11 @@ export default defineConfig({
 				return false;
 			},
 		}),
-		mdx(),
 		sitemap(),
 	],
 	markdown: {
 		rehypePlugins: [rehypeWrapTables],
+		syntaxHighlight: false,
 	},
 	fonts: [
 		{
