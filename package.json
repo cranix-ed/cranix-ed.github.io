@@ -36,6 +36,7 @@
     "remark-math": "^6.0.0",
     "remark-sectionize": "^2.1.0",
     "sharp": "^0.34.3",
+    "shiki": "^4.2.0",
     "unist-util-visit": "^5.1.0"
   }
 }

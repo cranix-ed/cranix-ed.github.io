@@ -14,6 +14,7 @@ export default defineConfig({
 			defaultProps: {
 				wrap: true,
 				showLineNumbers: true,
+				frame: 'terminal',
 			},
 			styleOverrides: {
 				codeFontSize: '0.875rem',
