@@ -6,7 +6,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 import rehypeWrapTables from './src/plugins/rehype-wrap-tables';
 
 export default defineConfig({
-	site: 'https://simple.com',
+	site: 'https://cranix-ed.github.io',
 	vite: {},
 	integrations: [
 		expressiveCode({
@@ -18,7 +18,8 @@ export default defineConfig({
 			},
 			styleOverrides: {
 				codeFontSize: '0.875rem',
-				codeFontFamily: "'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+				codeFontFamily:
+					"'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
 				codeLineHeight: '1.7142857em',
 				borderRadius: '0.5rem',
 				frameBorderWidth: '1px',
@@ -34,8 +35,8 @@ export default defineConfig({
 			},
 			useDarkModeMediaQuery: false,
 			themeCssSelector: (theme) => {
-				if (theme.name === 'github-dark') return '.dark';
-				return false;
+				if (theme.name === 'github-dark') return '.dark'
+				return false
 			},
 		}),
 		sitemap(),
@@ -52,10 +53,20 @@ export default defineConfig({
 			fallbacks: ['sans-serif'],
 			options: {
 				variants: [
-					{ src: ['./src/assets/fonts/atkinson-regular.woff'], weight: 400, style: 'normal', display: 'swap' },
-					{ src: ['./src/assets/fonts/atkinson-bold.woff'], weight: 700, style: 'normal', display: 'swap' },
+					{
+						src: ['./src/assets/fonts/atkinson-regular.woff'],
+						weight: 400,
+						style: 'normal',
+						display: 'swap',
+					},
+					{
+						src: ['./src/assets/fonts/atkinson-bold.woff'],
+						weight: 700,
+						style: 'normal',
+						display: 'swap',
+					},
 				],
 			},
 		},
 	],
-});
+})
