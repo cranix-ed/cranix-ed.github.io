@@ -1,17 +1,15 @@
 ---
-name: Bob
-title: Full Stack Developer / Technical Writer
+name: Arasu
+title: Penetration Tester | Security Guardian
 ---
 
 ## About Me
 
-Passionate about technology, focusing on Web development and security research. Sharing technical insights, study notes, and project experiences here.
+Passionate about technology, focusing on Pentesting and security research. Sharing technical insights, study notes, and project experiences here.
 
 ## Technical Skills
 
-- JavaScript / TypeScript
-- React / Vue
-- Node.js
+- Penetration Testing
 - Python
 - Web Security
 

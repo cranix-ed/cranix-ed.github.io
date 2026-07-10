@@ -20,7 +20,7 @@ const formatDate = (date: Date) => {
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang="vi">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<style>
@@ -160,7 +160,11 @@ const formatDate = (date: Date) => {
 			}
 
 			.post-item:hover {
-				background-color: rgba(249, 115, 22, 0.06);
+				background-color: color-mix(
+					in srgb,
+					var(--accent) 10%,
+					var(--bg-primary)
+				);
 			}
 
 			.post-link {
@@ -218,11 +222,19 @@ const formatDate = (date: Date) => {
 			}
 
 			html.dark .post-item:hover {
-				background-color: rgba(251, 146, 60, 0.12);
+				background-color: color-mix(
+					in srgb,
+					var(--accent) 10%,
+					var(--bg-primary)
+				);
 			}
 
 			html.dark .section-link {
-				background: rgba(251, 146, 60, 0.15);
+				background: color-mix(
+					in srgb,
+					var(--accent) 10%,
+					var(--bg-primary)
+				);
 			}
 
 			html.dark .section-link:hover {

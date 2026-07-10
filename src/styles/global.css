@@ -1,35 +1,51 @@
 /* ── CSS Variables ── */
 :root {
-	--accent: #F97316;
-	--accent-hover: #EA580C;
-	--accent-light: #FDBA74;
-	--text-primary: #18181B;
-	--text-secondary: #3F3F46;
-	--text-muted: #71717A;
-	--text-faint: #A1A1AA;
+	/* Accent */
+	--accent: #0891B2;
+	--accent-hover: #0E7490;
+	--accent-light: #67E8F9;
+
+	/* Text */
+	--text-primary: #0F172A;
+	--text-secondary: #334155;
+	--text-muted: #64748B;
+	--text-faint: #94A3B8;
+
+	/* Background */
 	--bg-primary: #FFFFFF;
-	--bg-secondary: #FAFAFA;
-	--bg-tertiary: #F5F5F5;
-	--border-color: #E4E4E7;
-	--codeblock-bg: #F5F5F5;
-	--codeblock-topbar-bg: #E4E4E7;
-	--body-font-size: 15px;
+	--bg-secondary: #F8FAFC;
+	--bg-tertiary: #F1F5F9;
+
+	/* Border và code */
+	--border-color: #DCE4EE;
+	--codeblock-bg: #F1F5F9;
+
+	/* Typography */
+	--body-font-size: 17px;
+
+	/* Layout */
+	--global-content-width: 760px;
+	--blog-content-width: 820px;
+	--toc-width: 240px;
+	--blog-toc-gap: 40px;
 }
 
 html.dark {
-	--accent: #FB923C;
-	--accent-hover: #F97316;
-	--accent-light: #FDBA74;
-	--text-primary: #FAFAFA;
-	--text-secondary: #D4D4D8;
-	--text-muted: #71717A;
-	--text-faint: #52525B;
-	--bg-primary: #18181B;
-	--bg-secondary: #27272A;
-	--bg-tertiary: #3F3F46;
-	--border-color: #3F3F46;
-	--codeblock-bg: #27272A;
-	--codeblock-topbar-bg: #3F3F46;
+	--accent: #22D3EE;
+	--accent-hover: #67E8F9;
+	--accent-light: #A5F3FC;
+
+	--text-primary: #F1F5F9;
+	--text-secondary: #CBD5E1;
+	--text-muted: #94A3B8;
+	--text-faint: #64748B;
+
+	--bg-primary: #0F172A;
+	--bg-secondary: #111C2E;
+	--bg-tertiary: #1E293B;
+
+	--border-color: #334155;
+	--codeblock-bg: #111827;
 }
 
 /* ── Base Reset ── */
@@ -60,10 +76,9 @@ body {
 
 /* ── Global layout ── */
 main {
-	width: 700px;
-	max-width: calc(100% - 2rem);
+	width: min(calc(100% - 2rem), var(--global-content-width));
 	margin: 0 auto;
-	padding: 2.5rem 1rem 4rem;
+	padding: 2.5rem 0 4rem;
 }
 
 /* ── Global links (nav, footer, etc — NOT prose) ── */
@@ -108,10 +123,13 @@ hr {
 
 /* ── Mobile ── */
 @media (max-width: 720px) {
-	body {
-		font-size: 16px;
+	:root {
+		--body-font-size: 16px;
 	}
+
 	main {
+		width: auto;
+		margin: 0;
 		padding: 2rem 1rem 3rem;
 	}
 }

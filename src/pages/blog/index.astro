@@ -78,7 +78,11 @@ const formatDate = (date: Date) => {
 				transition: background 0.2s ease;
 			}
 			.post-item:hover {
-				background: rgba(249, 115, 22, 0.08);
+				background-color: color-mix(
+					in srgb,
+					var(--accent) 10%,
+					var(--bg-primary)
+				);
 			}
 			.post-link {
 				display: flex;
@@ -196,7 +200,11 @@ const formatDate = (date: Date) => {
 				color: var(--accent);
 			}
 			html.dark .post-item:hover {
-				background: rgba(251, 146, 60, 0.15);
+				background-color: color-mix(
+					in srgb,
+					var(--accent) 10%,
+					var(--bg-primary)
+				);
 			}
 			html.dark .post-title {
 				color: var(--text-primary);

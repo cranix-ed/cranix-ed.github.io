@@ -29,7 +29,7 @@ const { tag, posts } = Astro.props;
 
 function formatDate(dateString) {
   const date = new Date(dateString);
-  return date.toLocaleDateString('zh-CN', {
+  return date.toLocaleDateString('vi', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
@@ -38,7 +38,7 @@ function formatDate(dateString) {
 ---
 
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
   <BaseHead title={`Tag: ${tag}`} />
   <style>

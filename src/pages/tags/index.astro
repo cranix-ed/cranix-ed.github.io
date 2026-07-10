@@ -24,7 +24,7 @@ const tags = Array.from(tagMap.entries())
 ---
 
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
   <BaseHead title="Tags" />
   <style>
@@ -73,14 +73,26 @@ const tags = Array.from(tagMap.entries())
     }
 
     .tag-link:hover {
-      background: rgba(249, 115, 22, 0.1);
       color: var(--accent);
-      border-color: rgba(249, 115, 22, 0.3);
+      border-color: color-mix(
+        in srgb,
+        var(--accent) 45%,
+        var(--border-color)
+      );
+      background-color: color-mix(
+        in srgb,
+        var(--accent) 8%,
+        var(--bg-primary)
+      );
     }
 
     .tag-count {
       font-size: 0.7rem;
-      background: rgba(249, 115, 22, 0.1);
+       background-color: color-mix(
+        in srgb,
+        var(--accent) 10%,
+        var(--bg-secondary)
+      );
       padding: 0.1rem 0.4rem;
       border-radius: 9999px;
       color: var(--accent);
@@ -106,13 +118,25 @@ const tags = Array.from(tagMap.entries())
     }
 
     html.dark .tag-link:hover {
-      background: rgba(251, 146, 60, 0.15);
       color: var(--accent-light);
-      border-color: rgba(251, 146, 60, 0.3);
+      border-color: color-mix(
+        in srgb,
+        var(--accent) 45%,
+        var(--border-color)
+      );
+      background-color: color-mix(
+        in srgb,
+        var(--accent) 8%,
+        var(--bg-primary)
+      );
     }
 
     html.dark .tag-count {
-      background: rgba(251, 146, 60, 0.15);
+      background: color-mix(
+        in srgb,
+        var(--accent) 10%,
+        var(--bg-secondary)
+      );
       color: var(--accent-light);
     }
   </style>

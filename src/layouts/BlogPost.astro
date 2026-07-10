@@ -12,67 +12,41 @@ interface Props extends CollectionEntry<'blog'>['data'] {
 const { title, description, pubDate, updatedDate, headings, tags } = Astro.props;
 ---
 
-<html lang="zh-cn">
+<html lang="vi">
   <head>
     <BaseHead title={title} description={description} date={pubDate} />
     <style is:global>
       :root {
-        --accent: #F97316;
-        --accent-hover: #EA580C;
-        --accent-light: #FDBA74;
-        --text-primary: #18181B;
-        --text-secondary: #3F3F46;
-        --text-muted: #71717A;
-        --text-faint: #A1A1AA;
-        --bg-primary: #FFFFFF;
-        --bg-secondary: #FAFAFA;
-        --bg-tertiary: #F4F4F5;
-        --border-color: #E4E4E7;
-        --codeblock-bg: #F4F4F5;
+        
       }
 
       html.dark {
-        --accent: #FB923C;
-        --accent-hover: #F97316;
-        --accent-light: #FDBA74;
-        --text-primary: #FAFAFA;
-        --text-secondary: #D4D4D8;
-        --text-muted: #71717A;
-        --text-faint: #52525B;
-        --bg-primary: #18181B;
-        --bg-secondary: #27272A;
-        --bg-tertiary: #3F3F46;
-        --border-color: #3F3F46;
-        --codeblock-bg: #27272A;
+        
       }
 
       html {
         scroll-behavior: smooth;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-        -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
       }
 
       body {
-        background-color: var(--bg-primary);
-        color: var(--text-secondary);
-        margin: 0;
-        transition: background-color 0.3s ease, color 0.3s ease;
-        font-size: 17px;
-        line-height: 1.9;
+        
       }
 
       /* ── Layout ── */
       .page-container {
-        max-width: 700px;
+        width: min(
+          calc(100% - 3rem),
+          var(--blog-content-width)
+        );
+        max-width: var(--blog-content-width);
         margin: 0 auto;
-        padding: 3rem 1.25rem 5rem;
+        padding: 3rem 0 5rem;
         position: relative;
       }
 
       /* Reset global main styles inside blog post */
       .page-container main {
-        width: auto;
+        width: 100%;
         max-width: none;
         margin: 0;
         padding: 0;
@@ -170,8 +144,9 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
       /* ── Prose (Starlight-inspired) ── */
       .prose {
         color: var(--text-secondary);
-        line-height: 1.7;
-        font-size: 15.5px;
+        line-height: 1.75;
+        font-size: 16.5px;
+        min-width: 0;
       }
 
       .prose > *:last-child { margin-bottom: 0; }
@@ -189,18 +164,18 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
       }
 
       .prose h2 {
-        font-size: 1.375rem;
-        margin: 1.75rem 0 0.625rem;
+        font-size: 1.5rem;
+        margin: 2.25rem 0 0.75rem;
       }
 
       .prose h3 {
-        font-size: 1.125rem;
-        margin: 1.75rem 0 0.625rem;
+        font-size: 1.25rem;
+        margin: 1.875rem 0 0.625rem;
       }
 
       .prose h4 {
-        font-size: 1rem;
-        margin: 1.375rem 0 0.5rem;
+        font-size: 1.0625rem;
+        margin: 1.5rem 0 0.5rem;
         color: var(--text-secondary);
       }
 
@@ -310,14 +285,21 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
 
       /* Code blocks */
       .prose pre {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         margin: 0 0 1.5rem;
-        border-radius: 8px;
+        border-radius: 10px;
         overflow-x: auto;
+        background-color: var(--codeblock-bg);
         border: 1px solid var(--border-color);
       }
 
       /* Expressive Code blocks */
       .prose .expressive-code {
+         width: 100%;
+        max-width: 100%;
+        min-width: 0;
         margin: 0 0 1.75rem;
       }
 
@@ -444,14 +426,20 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+
         position: fixed;
-        left: calc(50% + 370px);
+        left: calc(
+          50% +
+          var(--blog-content-width) / 2 +
+          var(--blog-toc-gap)
+        );
+
         top: 6.5rem;
-        bottom: 10rem;
-        width: 220px;
+        bottom: 6rem;
+        width: var(--toc-width);
       }
 
-      @media (max-width: 1200px) {
+      @media (max-width: 1400px) {
         .sidebar { display: none; }
       }
 
@@ -609,18 +597,47 @@ const { title, description, pubDate, updatedDate, headings, tags } = Astro.props
 
       /* ── Mobile ── */
       @media (max-width: 720px) {
-        body { font-size: 15.5px; }
+        .page-container {
+          width: auto;
+          max-width: none;
+          margin: 0;
+          padding: 2rem 1rem 4rem;
+        }
 
-        .page-container { padding: 2rem 1rem 4rem; }
+        .article-header {
+          margin-bottom: 2.5rem;
+          padding-bottom: 2rem;
+        }
 
-        .article-title { font-size: 1.75rem; }
+        .article-title {
+          font-size: 1.75rem;
+        }
 
-        .article-description { font-size: 1rem; }
+        .article-description {
+          font-size: 1rem;
+        }
 
-        .prose { font-size: 15.5px; }
+        .prose {
+          font-size: 15.5px;
+          line-height: 1.7;
+        }
 
-        .prose h2 { font-size: 1.25rem; }
-        .prose h3 { font-size: 1.125rem; }
+        .prose h2 {
+          font-size: 1.25rem;
+        }
+
+        .prose h3 {
+          font-size: 1.125rem;
+        }
+
+        .prose pre,
+        .prose .expressive-code {
+          max-width: 100%;
+        }
+
+        .prose table {
+          font-size: 0.8125rem;
+        }
       }
     </style>
   </head>
