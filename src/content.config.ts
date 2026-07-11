@@ -10,8 +10,9 @@ const blog = defineCollection({
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
 			tags: z.array(z.string()).optional(),
+			draft: z.boolean().default(false),
 		}),
-});
+})
 
 const about = defineCollection({
 	loader: glob({ base: './src/content/about', pattern: '**/*.{md,mdx}' }),

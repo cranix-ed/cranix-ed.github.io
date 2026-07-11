@@ -5,7 +5,10 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog');
+  const posts = await getCollection(
+    'blog',
+    ({ data }) => import.meta.env.DEV || !data.draft,
+  );
   const tagMap = new Map();
   
   posts.forEach((post) => {
