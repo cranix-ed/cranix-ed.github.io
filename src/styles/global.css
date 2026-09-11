@@ -25,7 +25,7 @@
 
 	/* Layout */
 	--global-content-width: 760px;
-	--blog-content-width: 820px;
+	--blog-content-width: 800px;
 	--toc-width: 240px;
 	--blog-toc-gap: 40px;
 }
